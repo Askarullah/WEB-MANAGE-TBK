@@ -485,7 +485,7 @@
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
             // Fetch devices from API
-            fetch('/api/devices')
+            fetch('/api/devices-suspend')
                 .then(response => response.json())
                 .then(data => {
                     devices = data.devices;

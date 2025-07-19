@@ -17,18 +17,24 @@ import openpyxl
 import paramiko
 import re
 import socket
+import  dotenv
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Use os.path.join for better cross-platform compatibility
 app = Flask(__name__, template_folder='templates')
 CORS(app)  # Enable CORS for all routes
-app.secret_key = 'your-secret-key-change-this'  # Change this in production
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'your-secret-key-change-this')  # Change this in production
+app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 52428800))  # 50MB max file size
 
 # Global storage for workbook data (in production, use Redis or database)
 workbook_storage = {}
 
 # MikroTik connection settings
-SSH_PORT = 2225
+MIKROTIK_SSH_PORT = int(os.getenv('MIKROTIK_SSH_PORT'))
+MIKROTIK_USERNAME = os.getenv('MIKROTIK_USERNAME')
+MIKROTIK_PASSWORD = os.getenv('MIKROTIK_PASSWORD')
 
 def show_startup_message():
     """Show startup message"""
@@ -53,13 +59,32 @@ def open_browser():
         print(f"✗ Could not open browser automatically: {e}")
         print("Please manually open: http://localhost:5050")
 
-def load_devices():
+def load_devices_active():
     """
     Load devices from JSON file
     """
     try:
         # Check if devices.json exists in the same directory as app.py
-        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices.json')
+        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices-active.json')
+        if os.path.exists(devices_file):
+            with open(devices_file, 'r') as f:
+                devices = json.load(f)
+            return devices
+        else:
+            # Return empty list if file doesn't exist
+            print("Warning: devices.json not found. Using empty device list.")
+            return []
+    except Exception as e:
+        print(f"Error loading devices: {e}")
+        return []
+
+def load_devices_suspend():
+    """
+    Load devices from JSON file
+    """
+    try:
+        # Check if devices.json exists in the same directory as app.py
+        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices-suspend.json')
         if os.path.exists(devices_file):
             with open(devices_file, 'r') as f:
                 devices = json.load(f)
@@ -85,14 +110,14 @@ def connect_to_mikrotik(ip, command):
         # Additional SSH client configuration
         ssh_client.load_system_host_keys()
         
-        print(f"Attempting to connect to {ip}:{SSH_PORT}")
+        print(f"Attempting to connect to {ip}:{MIKROTIK_SSH_PORT}")
         
         # Connect to MikroTik with enhanced parameters
         ssh_client.connect(
             hostname=ip,
-            username='TBK-NSEw01',
-            password='XgGUX^]~YgLl5tu]',
-            port=SSH_PORT,
+            username=MIKROTIK_USERNAME,
+            password=MIKROTIK_PASSWORD,
+            port=MIKROTIK_SSH_PORT,
             timeout=30,  # Increased timeout
             auth_timeout=30,  # Authentication timeout
             banner_timeout=30,  # Banner timeout
@@ -191,9 +216,9 @@ def test_mikrotik_connection_detailed(ip):
         
         ssh_client.connect(
             hostname=ip,
-            username='TBK-NSEw01',
-            password='XgGUX^]~YgLl5tu]',
-            port=SSH_PORT,
+            username=MIKROTIK_USERNAME,
+            password=MIKROTIK_PASSWORD,
+            port=MIKROTIK_SSH_PORT,
             timeout=30,
             look_for_keys=False,
             allow_agent=False
@@ -891,7 +916,7 @@ def get_co_mapping():
     Get CO to IP mapping for the frontend
     """
     try:
-        devices = load_devices()
+        devices = load_devices_active()
         co_mapping = {}
         
         for device in devices:
@@ -906,12 +931,21 @@ def get_co_mapping():
     except Exception as e:
         return jsonify({'error': f'Failed to load CO mapping: {str(e)}'}), 500
 
-@app.route('/api/devices', methods=['GET'])
-def get_devices():
+@app.route('/api/devices-suspend', methods=['GET'])
+def get_devices_suspend():
     """
     Get list of available MikroTik devices from JSON file
     """
-    devices = load_devices()
+    devices = load_devices_suspend()    
+
+    return jsonify({'devices': devices})
+
+@app.route('/api/devices-active', methods=['GET'])
+def get_devices_active():
+    """
+    Get list of available MikroTik devices from JSON file
+    """
+    devices = load_devices_active() 
     return jsonify({'devices': devices})
 
 if __name__ == '__main__':

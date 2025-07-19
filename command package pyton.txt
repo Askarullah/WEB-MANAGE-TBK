@@ -1,0 +1,1 @@
+pyinstaller --onefile --add-data "templates;templates" --console script-web-track.py

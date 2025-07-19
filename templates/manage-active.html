@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Active - Batch CSID Status Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 4px solid #4f46e5;
+        }
+
+        .section h2 {
+            color: #4f46e5;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+            min-height: 150px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 8px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 8px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .preview-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .preview-table th,
+        .preview-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .preview-table th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .preview-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-top: 4px solid #4f46e5;
+        }
+
+        .stat-card.active {
+            border-top-color: #10b981;
+        }
+
+        .stat-card.suspended {
+            border-top-color: #ef4444;
+        }
+
+        .stat-card.not-found {
+            border-top-color: #f59e0b;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .results-section {
+            display: none;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-suspended {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-not-found {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid;
+        }
+
+        .alert-success {
+            background: #dcfce7;
+            border-left-color: #16a34a;
+            color: #166534;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border-left-color: #dc2626;
+            color: #991b1b;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            border-left-color: #f59e0b;
+            color: #92400e;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .home-button {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .home-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .sample-text {
+            font-size: 12px;
+            color: #6b7280;
+            font-style: italic;
+            margin-top: 5px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .results-table th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .results-table tr:hover {
+            background: #f8fafc;
+        }
+
+        .device-info {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .progress-text {
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="home-button">
+                <span>← Back to Dashboard</span>
+            </a>
+            <h1>🔍 Manage Active</h1>
+            <p>Batch CSID Status Checker - Check if CSIDs are ACTIVE or SUSPENDED</p>
+        </div>
+
+        <div class="content">
+            <!-- Input Section -->
+            <div class="section">
+                <h2>📋 Input Data</h2>
+                <div class="input-group">
+                    <label for="csid-data">Paste Excel Data (CSID and CO columns):</label>
+                    <textarea id="csid-data" placeholder="Paste your Excel data here...&#10;Example:&#10;SI-BK001234    CO-PN-R1&#10;SI-BK001235    CO-PN-R2&#10;SI-BK001236    CO-PN-R1"></textarea>
+                    <div class="sample-text">
+                        Expected format: Two columns separated by tab/space - CSID and CO
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="previewData()">
+                    📊 Preview Data
+                </button>
+                <button class="btn btn-success" onclick="startBatchSearch()" disabled id="search-btn">
+                    🔍 Start Batch Search
+                </button>
+                <button class="btn btn-warning" onclick="clearData()">
+                    🗑️ Clear Data
+                </button>
+            </div>
+
+            <!-- Preview Section -->
+            <div class="section preview-section" id="preview-section">
+                <h2>👀 Data Preview</h2>
+                <div id="preview-stats"></div>
+                <div id="preview-data"></div>
+            </div>
+
+            <!-- Loading Section -->
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Processing CSIDs... Please wait</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <div class="progress-text" id="progress-text">Initializing...</div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="section results-section" id="results-section">
+                <h2>📊 Search Results</h2>
+                
+                <div class="stats-grid" id="stats-grid">
+                    <div class="stat-card active">
+                        <div class="stat-number" id="active-count">0</div>
+                        <div class="stat-label">Active</div>
+                    </div>
+                    <div class="stat-card suspended">
+                        <div class="stat-number" id="suspended-count">0</div>
+                        <div class="stat-label">Suspended</div>
+                    </div>
+                    <div class="stat-card not-found">
+                        <div class="stat-number" id="not-found-count">0</div>
+                        <div class="stat-label">Not Found</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="total-count">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-success" onclick="exportResults()">
+                    📤 Export Results
+                </button>
+                <button class="btn" onclick="newSearch()">
+                    🔄 New Search
+                </button>
+
+                <div id="results-table-container"></div>
+            </div>
+
+            <!-- Alerts -->
+            <div id="alerts"></div>
+        </div>
+    </div>
+
+    <script>
+        let parsedData = [];
+        let searchResults = [];
+        let coToIpMapping = {}; // This will be populated from your devices.json or API
+
+        // Initialize CO to IP mapping
+        async function initializeCoMapping() {
+            try {
+                const response = await fetch('/api/devices');
+                const data = await response.json();
+                
+                // Build CO to IP mapping from devices
+                data.devices.forEach(device => {
+                    if (device.co && device.ip) {
+                        coToIpMapping[device.co] = device.ip;
+                    }
+                });
+                
+                console.log('CO to IP mapping loaded:', coToIpMapping);
+            } catch (error) {
+                console.error('Error loading CO mapping:', error);
+                showAlert('Warning: Could not load CO to IP mapping. Manual IP entry may be required.', 'warning');
+            }
+        }
+
+        // Initialize on page load
+        window.onload = function() {
+            initializeCoMapping();
+        };
+
+        function showAlert(message, type = 'success') {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertsContainer.appendChild(alert);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        function previewData() {
+            const inputData = document.getElementById('csid-data').value.trim();
+            
+            if (!inputData) {
+                showAlert('Please enter some data first.', 'warning');
+                return;
+            }
+
+            parsedData = parseInputData(inputData);
+            
+            if (parsedData.length === 0) {
+                showAlert('No valid CSID-CO pairs found. Please check your data format.', 'error');
+                return;
+            }
+
+            displayPreview();
+            document.getElementById('search-btn').disabled = false;
+        }
+
+        function parseInputData(inputData) {
+            const lines = inputData.split('\n');
+            const parsed = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                // Split by tab or multiple spaces
+                const parts = line.split(/\t+|\s{2,}/).filter(part => part.trim());
+                
+                if (parts.length >= 2) {
+                    const csid = parts[0].trim();
+                    const co = parts[1].trim();
+                    
+                    // Basic validation
+                    if (csid.match(/SI-BK\d{6}/) && co.match(/CO-/)) {
+                        parsed.push({
+                            csid: csid,
+                            co: co,
+                            deviceIp: coToIpMapping[co] || 'Unknown'
+                        });
+                    }
+                }
+            }
+            
+            return parsed;
+        }
+
+        function displayPreview() {
+            const previewSection = document.getElementById('preview-section');
+            const previewStats = document.getElementById('preview-stats');
+            const previewData = document.getElementById('preview-data');
+            
+            // Group by CO
+            const coGroups = {};
+            parsedData.forEach(item => {
+                if (!coGroups[item.co]) {
+                    coGroups[item.co] = [];
+                }
+                coGroups[item.co].push(item);
+            });
+            
+            // Create stats
+            const statsHtml = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">${parsedData.length}</div>
+                        <div class="stat-label">Total CSIDs</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${Object.keys(coGroups).length}</div>
+                        <div class="stat-label">Jumlah CO yang di track</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${Object.values(coGroups).filter(group => group[0].deviceIp !== 'Unknown').length}</div>
+                        <div class="stat-label">Mapping CO</div>
+                    </div>
+                </div>
+            `;
+            
+            // Create preview table
+            let tableHtml = `
+                <table class="preview-table">
+                    <thead>
+                        <tr>
+                            <th>CSID</th>
+                            <th>CO</th>
+                            <th>Device IP</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            parsedData.slice(0, 10).forEach(item => {
+                tableHtml += `
+                    <tr>
+                        <td>${item.csid}</td>
+                        <td>${item.co}</td>
+                        <td class="device-info">${item.deviceIp}</td>
+                    </tr>
+                `;
+            });
+            
+            if (parsedData.length > 10) {
+                tableHtml += `
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: #6b7280; font-style: italic;">
+                            ... and ${parsedData.length - 10} more rows
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+            
+            previewStats.innerHTML = statsHtml;
+            previewData.innerHTML = tableHtml;
+            previewSection.style.display = 'block';
+        }
+
+        async function startBatchSearch() {
+            if (parsedData.length === 0) {
+                showAlert('No data to search. Please preview data first.', 'warning');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('search-btn').disabled = true;
+
+            // Group CSIDs by CO
+            const coGroups = {};
+            parsedData.forEach(item => {
+                if (!coGroups[item.co]) {
+                    coGroups[item.co] = [];
+                }
+                coGroups[item.co].push(item);
+            });
+
+            searchResults = [];
+            const totalCos = Object.keys(coGroups).length;
+            let processedCos = 0;
+
+            for (const [co, csids] of Object.entries(coGroups)) {
+                const deviceIp = coToIpMapping[co];
+                
+                updateProgress(processedCos, totalCos, `Processing ${co}...`);
+                
+                if (!deviceIp) {
+                    // Mark all CSIDs as NOT_FOUND if no device IP
+                    csids.forEach(item => {
+                        searchResults.push({
+                            ...item,
+                            status: 'NOT_FOUND',
+                            error: 'IP CO tidak di mapping'
+                        });
+                    });
+                } else {
+                    // Query the device
+                    try {
+                        const suspendedCsids = await queryDevice(deviceIp);
+                        
+                        // Check each CSID
+                        csids.forEach(item => {
+                            const issuspended = suspendedCsids.includes(item.csid);
+                            searchResults.push({
+                                ...item,
+                                status: issuspended ? 'SUSPENDED' : 'ACTIVE',
+                                deviceIp: deviceIp
+                            });
+                        });
+                    } catch (error) {
+                        console.error(`Error querying device ${deviceIp}:`, error);
+                        
+                        // Mark all CSIDs as NOT_FOUND on error
+                        csids.forEach(item => {
+                            searchResults.push({
+                                ...item,
+                                status: 'NOT_FOUND',
+                                error: error.message || 'Connection failed'
+                            });
+                        });
+                    }
+                }
+                
+                processedCos++;
+                updateProgress(processedCos, totalCos, `Processed ${co}`);
+            }
+
+            // Hide loading and show results
+            document.getElementById('loading').style.display = 'none';
+            displayResults();
+            document.getElementById('search-btn').disabled = false;
+        }
+
+        async function queryDevice(deviceIp) {
+            const response = await fetch('/api/mikrotik/firewall-list', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ip: deviceIp,
+                    command: '/ip firewall address-list print where list="SUSPEND_SOLNET"'
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to query device');
+            }
+
+            const data = await response.json();
+            
+            // Extract CSIDs from the results
+            const suspendedCsids = data.results.map(item => item.csid).filter(csid => csid !== 'N/A');
+            
+            return suspendedCsids;
+        }
+
+        function updateProgress(processed, total, message) {
+            const progressPercent = (processed / total) * 100;
+            document.getElementById('progress-fill').style.width = `${progressPercent}%`;
+            document.getElementById('progress-text').textContent = message;
+        }
+
+        function displayResults() {
+            const resultsSection = document.getElementById('results-section');
+            
+            // Calculate stats
+            const stats = {
+                active: searchResults.filter(r => r.status === 'ACTIVE').length,
+                suspended: searchResults.filter(r => r.status === 'SUSPENDED').length,
+                notFound: searchResults.filter(r => r.status === 'NOT_FOUND').length,
+                total: searchResults.length
+            };
+            
+            // Update stats
+            document.getElementById('active-count').textContent = stats.active;
+            document.getElementById('suspended-count').textContent = stats.suspended;
+            document.getElementById('not-found-count').textContent = stats.notFound;
+            document.getElementById('total-count').textContent = stats.total;
+            
+            // Create results table
+            let tableHtml = `
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>CSID</th>
+                            <th>CO</th>
+                            <th>Device IP</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            searchResults.forEach(result => {
+                const statusClass = result.status.toLowerCase().replace('_', '-');
+                tableHtml += `
+                    <tr>
+                        <td>${result.csid}</td>
+                        <td>${result.co}</td>
+                        <td class="device-info">${result.deviceIp || 'Unknown'}</td>
+                        <td><span class="status-badge status-${statusClass}">${result.status}</span></td>
+                        <td class="device-info">${result.error || ''}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHtml += `
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('results-table-container').innerHTML = tableHtml;
+            resultsSection.style.display = 'block';
+            
+            showAlert(`Search completed! Found ${stats.active} active, ${stats.suspended} suspended, ${stats.notFound} not found.`, 'success');
+        }
+
+        function exportResults() {
+            if (searchResults.length === 0) {
+                showAlert('No results to export.', 'warning');
+                return;
+            }
+
+            const exportData = searchResults.map(result => ({
+                CSID: result.csid,
+                CO: result.co,
+                'Device IP': result.deviceIp || 'Unknown',
+                Status: result.status,
+                Notes: result.error || ''
+            }));
+
+            fetch('/export', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    data: exportData
+                })
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `csid_status_results_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showAlert('Results exported successfully!', 'success');
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                showAlert('Failed to export results.', 'error');
+            });
+        }
+
+        function clearData() {
+            document.getElementById('csid-data').value = '';
+            document.getElementById('preview-section').style.display = 'none';
+            document.getElementById('results-section').style.display = 'none';
+            document.getElementById('search-btn').disabled = true;
+            parsedData = [];
+            searchResults = [];
+            showAlert('Data cleared.', 'success');
+        }
+
+        function newSearch() {
+            clearData();
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>

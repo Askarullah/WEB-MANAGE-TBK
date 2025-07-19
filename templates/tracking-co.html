@@ -1,0 +1,1096 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRACKING CO PELANGGAN</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        background: #E8E6F0;
+        min-height: 100vh;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        overflow-x: hidden;
+        position: relative;
+      }
+
+      /* Animated background particles */
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+          radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+          radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+        animation: float 6s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0px) scale(1); }
+        50% { transform: translateY(-20px) scale(1.05); }
+      }
+
+      .main-container {
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(25px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 32px;
+        box-shadow: 
+          0 32px 64px rgba(0, 0, 0, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        margin: 40px auto;
+        max-width: 1200px;
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+      }
+
+      /* Glassmorphism header */
+      .header {
+        background: linear-gradient(135deg, 
+          rgba(76, 175, 80, 0.9) 0%, 
+          rgba(69, 160, 73, 0.9) 50%,
+          rgba(56, 142, 60, 0.9) 100%);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+          transparent, 
+          rgba(255, 255, 255, 0.1), 
+          transparent);
+        animation: shimmer 3s infinite;
+      }
+
+      @keyframes shimmer {
+        0% { left: -100%; }
+        100% { left: 100%; }
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 10px;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        letter-spacing: -0.02em;
+      }
+
+      .header p {
+        font-size: 1.1rem;
+        font-weight: 500;
+        opacity: 0.9;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+      }
+
+      /* Stylish Home Button */
+      .home-button {
+        position: absolute;
+        top: 15px;
+        left: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .home-button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        border-color: rgba(255, 255, 255, 0.5);
+        color: white;
+        text-decoration: none;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+      }
+
+      .home-button i {
+        font-size: 1rem;
+        transition: transform 0.3s ease;
+      }
+
+      .home-button:hover i {
+        transform: scale(1.1);
+      }
+
+      .content-section {
+        padding: 50px 40px;
+      }
+
+      /* Glass card components */
+      .glass-card {
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 24px;
+        padding: 30px;
+        margin-bottom: 30px;
+        box-shadow: 
+          0 20px 40px rgba(0, 0, 0, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      }
+
+      .section-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #2c3e50;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .section-title i {
+        color: #4CAF50;
+      }
+
+      /* Upload zone styling */
+      .upload-zone {
+        border: 3px dashed rgba(76, 175, 80, 0.3);
+        border-radius: 20px;
+        padding: 40px;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+      }
+
+      .upload-zone:hover {
+        border-color: rgba(76, 175, 80, 0.6);
+        background: rgba(76, 175, 80, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .upload-zone.dragover {
+        border-color: #4CAF50;
+        background: rgba(76, 175, 80, 0.2);
+        transform: scale(1.02);
+      }
+
+      .upload-zone i {
+        color: #4CAF50;
+        margin-bottom: 15px;
+      }
+
+      .upload-zone h5 {
+        color: #2c3e50;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+
+      .upload-zone p {
+        color: #6c757d;
+        font-weight: 500;
+      }
+
+      /* Luxury button design */
+      .luxury-btn {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 15px;
+        color: #2c3e50;
+        padding: 12px 24px;
+        font-weight: 600;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 
+          0 8px 32px rgba(0, 0, 0, 0.08),
+          inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 5px;
+      }
+
+      .luxury-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, 
+          transparent, 
+          rgba(76, 175, 80, 0.1), 
+          transparent);
+        transition: left 0.5s ease;
+      }
+
+      .luxury-btn:hover::before {
+        left: 100%;
+      }
+
+      .luxury-btn:hover {
+        transform: translateY(-3px);
+        background: rgba(76, 175, 80, 0.95);
+        color: white;
+        box-shadow: 
+          0 15px 30px rgba(76, 175, 80, 0.3),
+          0 0 0 1px rgba(76, 175, 80, 0.1);
+        text-decoration: none;
+      }
+
+      .luxury-btn.btn-outline-danger:hover {
+        background: rgba(220, 53, 69, 0.95);
+        box-shadow: 0 15px 30px rgba(220, 53, 69, 0.3);
+      }
+
+      .luxury-btn.btn-outline-warning:hover {
+        background: rgba(255, 193, 7, 0.95);
+        box-shadow: 0 15px 30px rgba(255, 193, 7, 0.3);
+      }
+
+      .luxury-btn.btn-outline-info:hover {
+        background: rgba(13, 202, 240, 0.95);
+        box-shadow: 0 15px 30px rgba(13, 202, 240, 0.3);
+      }
+
+      .luxury-btn.btn-outline-secondary:hover {
+        background: rgba(108, 117, 125, 0.95);
+        box-shadow: 0 15px 30px rgba(108, 117, 125, 0.3);
+      }
+
+      .luxury-btn.btn-outline-success:hover {
+        background: rgba(25, 135, 84, 0.95);
+        box-shadow: 0 15px 30px rgba(25, 135, 84, 0.3);
+      }
+
+      .luxury-btn.btn-outline-primary:hover {
+        background: rgba(13, 110, 253, 0.95);
+        box-shadow: 0 15px 30px rgba(13, 110, 253, 0.3);
+      }
+
+      /* Textarea styling */
+      .bulk-input {
+        min-height: 120px;
+        border-radius: 15px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+        color: #2c3e50;
+        font-weight: 500;
+      }
+
+      .bulk-input:focus {
+        border-color: #4CAF50;
+        box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+        background: rgba(255, 255, 255, 0.7);
+      }
+
+      /* Status card */
+      .status-card {
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        padding: 25px;
+        margin: 20px 0;
+        border-left: 5px solid #4CAF50;
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        position: relative;
+      }
+
+      .status-card .btn-close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        z-index: 10; 
+        }
+
+      /* Progress bar */
+      .progress-container {
+        margin: 20px 0;
+        display: none;
+      }
+
+      .progress {
+        height: 25px;
+        border-radius: 15px;
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        border-radius: 15px;
+        background: linear-gradient(45deg, #4CAF50, #45a049);
+        transition: width 0.3s ease;
+      }
+
+      /* Table styling */
+      .csid-table {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.4);
+        backdrop-filter: blur(20px);
+      }
+
+      .table {
+        margin-bottom: 0;
+        color: #2c3e50;
+      }
+
+      .table-dark {
+        background: linear-gradient(135deg, #4CAF50, #45a049);
+        color: white;
+      }
+
+      .table-hover tbody tr:hover {
+        background: rgba(76, 175, 80, 0.1);
+        transform: translateX(5px);
+        transition: all 0.3s ease;
+      }
+
+      .found-sheets {
+        color: #28a745;
+        font-weight: 600;
+      }
+
+      .not-found {
+        color: #dc3545;
+        font-weight: 600;
+      }
+
+      /* Signature */
+      .signature {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 25px;
+        text-align: center;
+        color: rgba(44, 62, 80, 0.8);
+        font-size: 1rem;
+        font-weight: 500;
+        border-radius: 0 0 32px 32px;
+      }
+
+      .signature i {
+        color: #4CAF50;
+        margin-right: 8px;
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
+      }
+
+      .developer-name {
+        font-weight: 700;
+        color: #4CAF50;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Loading spinner */
+      .loading-spinner {
+        display: none;
+        margin: 0 10px;
+      }
+
+      /* Alert styling */
+      .alert {
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        margin-bottom: 20px;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .main-container {
+          margin: 20px;
+          border-radius: 24px;
+        }
+        
+        .header {
+          padding: 30px 20px;
+        }
+        
+        .header h1 {
+          font-size: 2rem;
+        }
+        
+        .content-section {
+          padding: 30px 20px;
+        }
+        
+        .glass-card {
+          padding: 20px;
+        }
+        
+        .home-button {
+          position: static;
+          margin: 0 auto 15px auto;
+          display: inline-flex;
+        }
+        
+        .upload-zone {
+          padding: 30px 20px;
+        }
+        
+        .luxury-btn {
+          margin: 3px;
+          padding: 10px 16px;
+          font-size: 0.9rem;
+        }
+
+        .status-card {
+          padding: 20px;
+          margin: 15px 0;
+          border-radius: 15px;
+        }
+  
+        .status-card .btn-close {
+          top: 8px;
+          right: 12px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header h1 {
+          font-size: 1.6rem;
+        }
+        
+        .section-title {
+          font-size: 1.2rem;
+        }
+        
+        .upload-zone {
+          padding: 25px 15px;
+        }
+        
+        .luxury-btn {
+          padding: 8px 12px;
+          font-size: 0.85rem;
+        }
+      }
+
+      /* Enhanced animations */
+      .fade-in {
+        animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(40px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="main-container fade-in">
+            <!-- Premium Header -->
+            <div class="header">
+                <a href="/" class="home-button">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <h1><i class="fas fa-search"></i> TRACKING CO PELANGGAN</h1>
+                <p class="mb-0">TG BALAI KARIMUN</p>
+            </div>
+            
+            <div class="content-section">
+                <!-- File Upload Section -->
+                <div class="glass-card">
+                    <h4 class="section-title">
+                        <i class="fas fa-upload"></i> Upload Excel File
+                    </h4>
+                    <div class="upload-zone" id="uploadZone">
+                        <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                        <h5>Drag & Drop Excel File Here</h5>
+                        <p class="text-muted">or click to browse</p>
+                        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display: none;">
+                        <button class="luxury-btn">
+                            <i class="fas fa-folder-open"></i> Browse Files
+                        </button>
+                    </div>
+                    
+                    <!-- Status Card -->
+                    <div class="status-card" id="statusCard" style="display: none;">
+                        <div style="position: relative;">
+                            <button type="button" class="btn-close" style="position: absolute; top: 0; right: 0;" id="closeStatusBtn" aria-label="Close"></button>
+                            <h6><i class="fas fa-info-circle"></i> File Status</h6>
+                            <div id="statusContent"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                   <!-- Progress Bar -->
+                   <div class="progress-container" id="progressContainer">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span id="progressText">Processing...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                
+                <!-- Management Section -->
+                <div class="glass-card">
+                    <h5 class="section-title">
+                        <i class="fas fa-cogs"></i> Manage
+                    </h5>
+                    <div class="d-flex flex-wrap">
+                        <button class="luxury-btn btn-outline-danger" id="removeSelectedBtn">
+                            <i class="fas fa-trash"></i> Hapus yang dipilih
+                        </button>
+                        <button class="luxury-btn btn-outline-warning" id="clearAllBtn">
+                            <i class="fas fa-broom"></i> Hapus Semua
+                        </button>
+                        <button class="luxury-btn btn-outline-info" id="refreshAllBtn">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Bulk Input Section -->
+                <div class="glass-card">
+                    <h5 class="section-title">
+                        <i class="fas fa-list"></i> TRACKING MASSIVE CSID
+                    </h5>
+                    <textarea class="form-control bulk-input" id="bulkCsids" placeholder="Paste CSID disini 
+Cth: SI-BK001899 SI-BK001940 SI-BK001941"></textarea>
+                    <div class="mt-3 d-flex flex-wrap">
+                        <button class="luxury-btn" id="addBulkBtn">
+                            <i class="fas fa-plus-square"></i> Submit CSID
+                            <div class="loading-spinner spinner-border spinner-border-sm" role="status"></div>
+                        </button>
+                        <button class="luxury-btn btn-outline-secondary" id="clearBulkBtn">
+                            <i class="fas fa-eraser"></i> Clear Kolom
+                        </button>
+                        <button class="luxury-btn btn-outline-success" id="exportBtn">
+                            <i class="fas fa-file-excel"></i> Download excel
+                        </button>
+                        <button class="luxury-btn btn-outline-primary" id="copyBtn">
+                            <i class="fas fa-copy"></i> Copy Hasil Tracking
+                        </button>
+                    </div>
+                </div>
+                <!-- Results Table -->
+                <div class="glass-card">
+                    <div class="csid-table">
+                        <table class="table table-hover table-striped mb-0">
+                            <thead class="table-dark sticky-top">
+                                <tr>
+                                    <th style="width: 50px;">
+                                        <input type="checkbox" id="selectAll" class="form-check-input">
+                                    </th>
+                                    <th style="width: 200px;">CSID <span class="badge bg-light text-dark" id="resultCount">0</span></th>
+                                    <th>CO</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTable">
+                                <tr>
+                                    <td colspan="3" class="text-center text-muted py-4">
+                                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                                        CSID belum terinput
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Premium Signature -->
+            <div class="signature">
+                <i class="fas fa-code"></i> Crafted by <span class="developer-name">Holil Askarullah</span>
+            </div>
+        </div>
+    </div>
+
+<script>
+        function copyTableContents() {
+        const table = document.getElementById("resultsTable");
+    
+            // Check if table has data
+            if (csidData.length === 0) {
+            showAlert('warning', 'No data to copy');
+            return;
+                                        }
+    
+            let text = "CSID\tCO\n"; // Add header row
+    
+        // Loop through csidData instead of table rows
+        for (const item of csidData) {
+        text += `${item.csid}\t${item.found_sheets}\n`;
+        }
+    
+        // Try using document.execCommand as a fallback for older browsers
+        try {
+        // Create a temporary textarea element
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        
+        // Try clipboard API first
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showAlert('success', 'Table contents copied to clipboard!');
+                })
+                .catch(err => {
+                    // If clipboard API fails, try execCommand
+                    const success = document.execCommand('copy');
+                    if (success) {
+                        showAlert('success', 'Table contents copied to clipboard!');
+                    } else {
+                        showAlert('danger', 'Failed to copy: ' + err);
+                    }
+                });
+            } else {
+            // For older browsers or non-secure contexts
+            const success = document.execCommand('copy');
+            if (success) {
+                showAlert('success', 'Table contents copied to clipboard!');
+            } else {
+                showAlert('danger', 'Your browser doesn\'t support clipboard operations');
+            }
+        }
+        
+        // Clean up
+        document.body.removeChild(textarea);
+         } catch (err) {
+        showAlert('danger', 'Failed to copy: ' + err);
+                      }
+                    }
+</script>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let csidData = [];
+        let fileLoaded = false;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupEventListeners();
+            checkStatus();
+        });
+        
+        function setupEventListeners() {
+            // File upload
+            const fileInput = document.getElementById('fileInput');
+            const uploadZone = document.getElementById('uploadZone');
+            
+            fileInput.addEventListener('change', handleFileUpload);
+            
+            // Drag and drop
+            uploadZone.addEventListener('dragover', handleDragOver);
+            uploadZone.addEventListener('dragleave', handleDragLeave);
+            uploadZone.addEventListener('drop', handleDrop);
+            uploadZone.addEventListener('click', () => fileInput.click());
+            
+            // Bulk operations
+            document.getElementById('addBulkBtn').addEventListener('click', addBulkCsids);
+            document.getElementById('clearBulkBtn').addEventListener('click', () => {
+                document.getElementById('bulkCsids').value = '';
+            });
+            
+            // Management buttons
+            document.getElementById('removeSelectedBtn').addEventListener('click', removeSelected);
+            document.getElementById('clearAllBtn').addEventListener('click', clearAll);
+            document.getElementById('refreshAllBtn').addEventListener('click', refreshAll);
+            document.getElementById('exportBtn').addEventListener('click', exportData);
+            
+            // Select all checkbox
+            document.getElementById('selectAll').addEventListener('change', function() {
+                const checkboxes = document.querySelectorAll('#resultsTable input[type="checkbox"]');
+                checkboxes.forEach(cb => cb.checked = this.checked);
+            });
+
+            // Close status card button
+            document.getElementById('closeStatusBtn').addEventListener('click', closeStatusCard);
+            // Copy button
+            document.getElementById('copyBtn').addEventListener('click', copyTableContents);
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            document.getElementById('uploadZone').classList.add('dragover');
+        }
+        
+        function handleDragLeave(e) {
+            e.preventDefault();
+            document.getElementById('uploadZone').classList.remove('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            document.getElementById('uploadZone').classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                handleFileUpload();
+            }
+        }
+        
+        function handleFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            showProgress('Uploading file...', 0);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                if (data.success) {
+                    fileLoaded = true;
+                    showStatus(data.message, file.name, data.sheets);
+                    showAlert('success', data.message);
+                } else {
+                    showAlert('danger', data.error);
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                showAlert('danger', 'Upload failed: ' + error.message);
+            });
+        }
+        
+        //FUNCTION YANG TRIGGER BUTTON SUBMIT CSID 
+        function addBulkCsids() {
+            const bulkInput = document.getElementById('bulkCsids');
+            const csidsText = bulkInput.value.trim();
+            
+            if (!csidsText) {
+                showAlert('warning', 'Input CSID dolo');
+                return;
+            }
+            
+            if (!fileLoaded) {
+                showAlert('warning', 'Upload Excel dolo');
+                return;
+            }
+            
+            const btn = document.getElementById('addBulkBtn');
+            setButtonLoading(btn, true);
+            showProgress('Tracking euy sabar...', 0);
+            
+            fetch('/add_bulk_csids', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({csids: csidsText})
+            })
+            .then(response => response.json())
+            .then(data => {
+                setButtonLoading(btn, false);
+                hideProgress();
+                
+                if (data.success) {
+                    // Filter out duplicates
+                    const existingCsids = new Set(csidData.map(item => item.csid));
+                    const newItems = data.results.filter(item => !existingCsids.has(item.csid));
+                    
+                    csidData.push(...newItems);
+                    updateTable();
+                    bulkInput.value = '';
+                    showAlert('success', `Added ${newItems.length} CSIDs (${data.results.length - newItems.length} duplicates skipped)`);
+                } else {
+                    showAlert('danger', data.error);
+                }
+            })
+            .catch(error => {
+                setButtonLoading(btn, false);
+                hideProgress();
+                showAlert('danger', 'Error: ' + error.message);
+            });
+        }
+        
+        function removeSelected() {
+            const selected = document.querySelectorAll('#resultsTable input[type="checkbox"]:checked');
+            if (selected.length === 0) {
+                showAlert('warning', 'Please select items to remove');
+                return;
+            }
+            
+            const indicesToRemove = Array.from(selected).map(cb => parseInt(cb.dataset.index));
+            csidData = csidData.filter((_, index) => !indicesToRemove.includes(index));
+            updateTable();
+            showAlert('success', `Removed ${selected.length} items`);
+        }
+        
+        function clearAll() {
+            if (csidData.length === 0) {
+                showAlert('info', 'No data to clear');
+                return;
+            }
+            
+            if (confirm('Are you sure you want to clear all CSIDs?')) {
+                csidData = [];
+                updateTable();
+                showAlert('success', 'All data cleared');
+            }
+        }
+        
+        function refreshAll() {
+            if (csidData.length === 0) {
+                showAlert('info', 'No CSIDs to refresh');
+                return;
+            }
+            
+            if (!fileLoaded) {
+                showAlert('warning', 'Upload Excel dahulu');
+                return;
+            }
+            
+            const csids = csidData.map(item => item.csid);
+            showProgress('Refreshing CSIDs...', 0);
+            
+            fetch('/refresh_csids', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({csids: csids})
+            })
+            .then(response => response.json())
+            .then(data => {
+                hideProgress();
+                if (data.success) {
+                    csidData = data.results;
+                    updateTable();
+                    showAlert('success', `Refreshed ${data.results.length} CSIDs`);
+                } else {
+                    showAlert('danger', data.error);
+                }
+            })
+            .catch(error => {
+                hideProgress();
+                showAlert('danger', 'Error: ' + error.message);
+            });
+        }
+        
+        function exportData() {
+            if (csidData.length === 0) {
+                showAlert('warning', 'No data to export');
+                return;
+            }
+            
+            const exportData = csidData.map(item => ({
+                CSID: item.csid,
+                'Found In Sheets': item.found_sheets
+            }));
+            
+            fetch('/export', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({data: exportData})
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                throw new Error('Export failed');
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `csid_results_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                showAlert('success', 'Data exported successfully');
+            })
+            .catch(error => {
+                showAlert('danger', 'Export failed: ' + error.message);
+            });
+        }
+        
+        function updateTable() {
+            const tbody = document.getElementById('resultsTable');
+            const countBadge = document.getElementById('resultCount');
+            
+            if (csidData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2"></i><br>
+                            No CSIDs added yet. Upload an Excel file and start adding CSIDs.
+                        </td>
+                    </tr>
+                `;
+                countBadge.textContent = '0';
+                return;
+            }
+            
+            tbody.innerHTML = csidData.map((item, index) => `
+                <tr class="csid-row fade-in">
+                    <td>
+                        <input type="checkbox" class="form-check-input" data-index="${index}">
+                    </td>
+                    <td><strong>${item.csid}</strong></td>
+                    <td>
+                        <span class="${item.found_sheets === 'Not Found' ? 'not-found' : 'found-sheets'}">
+                            ${item.found_sheets}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+            
+            countBadge.textContent = csidData.length;
+        }
+        
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.main-container .p-4');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto dismiss after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        function showProgress(text, percent) {
+            const container = document.getElementById('progressContainer');
+            const textElement = document.getElementById('progressText');
+            const percentElement = document.getElementById('progressPercent');
+            const progressBar = document.getElementById('progressBar');
+            
+            textElement.textContent = text;
+            percentElement.textContent = `${percent}%`;
+            progressBar.style.width = `${percent}%`;
+            container.style.display = 'block';
+        }
+        
+        function hideProgress() {
+            document.getElementById('progressContainer').style.display = 'none';
+        }
+        
+        function showStatus(message, filename, sheets) {
+            const statusCard = document.getElementById('statusCard');
+            const statusContent = document.getElementById('statusContent');
+            
+            statusContent.innerHTML = `
+                <p><strong>File:</strong> ${filename}</p>
+                <p><strong>Sheets:</strong> ${sheets.join(', ')}</p>
+                <p><strong>Status:</strong> ${message}</p>
+            `;
+            
+            statusCard.style.display = 'block';
+
+            // Scroll to status card on mobile phone
+            setTimeout(() => {
+              statusCard.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'nearest' 
+              });
+          }, 100);
+        }
+        
+        function setButtonLoading(button, loading) {
+            const spinner = button.querySelector('.loading-spinner');
+            if (loading) {
+                button.disabled = true;
+                spinner.style.display = 'inline-block';
+            } else {
+                button.disabled = false;
+                spinner.style.display = 'none';
+            }
+        }
+        
+        function checkStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.loaded) {
+                        fileLoaded = true;
+                        showStatus('File loaded successfully', data.filename, data.sheets);
+                    }
+                })
+                .catch(error => {
+                    console.log('No previous session found');
+                });
+        }
+
+        function closeStatusCard() {
+            // Call the server to reset the file data
+            fetch('/reset_file', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                fileLoaded = false;
+                document.getElementById('statusCard').style.display = 'none';
+                document.getElementById('fileInput').value = '';
+                showAlert('success', 'File reset successfully. You can now upload a new file.');
+            })
+            .catch(error => {
+                showAlert('danger', 'Error resetting file: ' + error.message);
+            });
+        }
+    </script>
+</body>
+</html>

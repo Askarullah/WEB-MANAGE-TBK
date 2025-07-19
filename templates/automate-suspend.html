@@ -616,130 +616,105 @@
         }
 
         async function connectToSelectedDevices() {
-            if (selectedDevices.length === 0) {
-                showMessage('Please select at least one device.', 'error');
-                return;
-            }
+    if (selectedDevices.length === 0) {
+        showMessage('Please select at least one device.', 'error');
+        return;
+    }
+    
+    // Hide device grid and show results section
+    document.getElementById('deviceGrid').parentElement.style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'block';
+    
+    // Show current devices info
+    displayCurrentDevices();
+    
+    // Clear previous results
+    combinedResults = [];
+    document.getElementById('resultsContainer').innerHTML = '';
+    document.getElementById('errorMessage').innerHTML = '';
+    document.getElementById('successMessage').innerHTML = '';
+    document.getElementById('warningMessage').innerHTML = '';
+    
+    // Show loading indicator
+    document.getElementById('loadingIndicator').classList.remove('hidden');
+    
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    
+    // Track different types of results
+    let devicesWithData = [];           // Successfully connected with suspended addresses
+    let devicesWithoutData = [];        // Successfully connected but no suspended addresses
+    let connectionFailures = [];        // Failed to connect via SSH/network
+    
+    // Process each device
+    for (let i = 0; i < selectedDevices.length; i++) {
+        const device = selectedDevices[i];
+        
+        try {
+            // Update progress
+            progressText.textContent = `Connecting to ${device.name}... (${i + 1}/${selectedDevices.length})`;
+            progressFill.style.width = `${(i / selectedDevices.length) * 100}%`;
             
-            // Hide device grid and show results section
-            document.getElementById('deviceGrid').parentElement.style.display = 'none';
-            document.getElementById('resultsSection').style.display = 'block';
+            // Make API call
+            const response = await fetch('/api/mikrotik/firewall-list', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ip: device.ip,
+                    command: '/ip firewall address-list print where list="SUSPEND_SOLNET"'
+                })
+            });
             
-            // Show current devices info
-            displayCurrentDevices();
+            const data = await response.json();
             
-            // Clear previous results
-            combinedResults = [];
-            document.getElementById('resultsContainer').innerHTML = '';
-            document.getElementById('errorMessage').innerHTML = '';
-            document.getElementById('successMessage').innerHTML = '';
-            document.getElementById('warningMessage').innerHTML = '';
-            
-            // Show loading indicator
-            document.getElementById('loadingIndicator').classList.remove('hidden');
-            
-            const progressFill = document.getElementById('progressFill');
-            const progressText = document.getElementById('progressText');
-            
-            let completed = 0;
-            let errors = [];
-            
-            // Process each device
-            for (let i = 0; i < selectedDevices.length; i++) {
-                const device = selectedDevices[i];
-                
-                try {
-                    // Update progress
-                    progressText.textContent = `Connecting to ${device.name}... (${i + 1}/${selectedDevices.length})`;
-                    progressFill.style.width = `${(i / selectedDevices.length) * 100}%`;
+            if (response.ok) {
+                if (data.results && data.results.length > 0) {
+                    // Add device source to each result
+                    const deviceResults = data.results.map(item => ({
+                        ...item,
+                        deviceName: device.name,
+                        deviceIP: device.ip,
+                        deviceLocation: device.location
+                    }));
                     
-                    // Make API call
-                    const response = await fetch('/api/mikrotik/firewall-list', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            ip: device.ip,
-                            command: '/ip firewall address-list print where list="SUSPEND_SOLNET"'
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (response.ok) {
-                        if (data.results && data.results.length > 0) {
-                            // Add device source to each result
-                            const deviceResults = data.results.map(item => ({
-                                ...item,
-                                deviceName: device.name,
-                                deviceIP: device.ip,
-                                deviceLocation: device.location
-                            }));
-                            
-                            combinedResults.push(...deviceResults);
-                            completed++;
-                        } else {
-                            // Successfully connected but no results found
-                            completed++;
-                        }
-                    } else {
-                        // Connection or authentication failed
-                        const errorMsg = data.error || 'Unknown error';
-                        if (errorMsg.toLowerCase().includes('ssh') || 
-                            errorMsg.toLowerCase().includes('connection') || 
-                            errorMsg.toLowerCase().includes('timeout') ||
-                            errorMsg.toLowerCase().includes('refused') ||
-                            errorMsg.toLowerCase().includes('authentication')) {
-                            errors.push(`${device.name} (${device.ip}): Connection failed - ${errorMsg}`);
-                        } else {
-                            errors.push(`${device.name} (${device.ip}): ${errorMsg}`);
-                        }
-                    }
-                } catch (error) {
-                    // Network or other connection errors
-                    const errorMsg = error.message || 'Unknown error';
-                    if (errorMsg.toLowerCase().includes('fetch') || 
-                        errorMsg.toLowerCase().includes('network') || 
-                        errorMsg.toLowerCase().includes('failed to fetch')) {
-                        errors.push(`${device.name} (${device.ip}): Network error - Check device connectivity`);
-                    } else {
-                        errors.push(`${device.name} (${device.ip}): ${errorMsg}`);
-                    }
-                }
-                
-                // Update progress
-                progressFill.style.width = `${((i + 1) / selectedDevices.length) * 100}%`;
-            }
-            
-            // Hide loading indicator
-            document.getElementById('loadingIndicator').classList.add('hidden');
-            
-            // Display results
-            displayCombinedResults();
-            
-            // Show status messages
-            if (completed > 0) {
-                const successfulDevices = selectedDevices.length - errors.length;
-                showMessage(`Successfully connected to ${successfulDevices} of ${selectedDevices.length} devices.`, 'success');
-            }
-            
-            if (errors.length > 0) {
-                const errorMessage = `Failed to connect to ${errors.length} device(s):<br>` + errors.join('<br>');
-                showMessage(errorMessage, 'error');
-            }
-            
-            if (combinedResults.length === 0) {
-                if (errors.length === selectedDevices.length) {
-                    showMessage('Could not connect to any selected devices. Please check device connectivity and SSH access.', 'error');
+                    combinedResults.push(...deviceResults);
+                    devicesWithData.push(device);
                 } else {
-                    showMessage('No suspended addresses found on any accessible device.', 'warning');
+                    // Successfully connected but no results found
+                    devicesWithoutData.push(device);
                 }
             } else {
-                const deviceCount = [...new Set(combinedResults.map(r => r.deviceIP))].length;
-                showMessage(`Found ${combinedResults.length} suspended addresses from ${deviceCount} device(s).`, 'success');
+                // Connection or authentication failed
+                const errorMsg = data.error || 'Unknown error';
+                connectionFailures.push({
+                    device: device,
+                    error: errorMsg
+                });
             }
+        } catch (error) {
+            // Network or other connection errors
+            const errorMsg = error.message || 'Unknown error';
+            connectionFailures.push({
+                device: device,
+                error: `Network error - ${errorMsg}`
+            });
         }
+        
+        // Update progress
+        progressFill.style.width = `${((i + 1) / selectedDevices.length) * 100}%`;
+    }
+    
+    // Hide loading indicator
+    document.getElementById('loadingIndicator').classList.add('hidden');
+    
+    // Display results
+    displayCombinedResults();
+    
+    // Show detailed status messages
+    showDetailedResults(devicesWithData, devicesWithoutData, connectionFailures);
+}
 
         function displayCurrentDevices() {
             const currentDevices = document.getElementById('currentDevices');
@@ -753,6 +728,58 @@
                 <div class="device-list">${deviceTags}</div>
             `;
         }
+
+        function showDetailedResults(devicesWithData, devicesWithoutData, connectionFailures) {
+    let messages = [];
+    
+    // Success message for devices with data
+    if (devicesWithData.length > 0) {
+        const deviceNames = devicesWithData.map(d => `${d.name} (${d.ip})`).join(', ');
+        messages.push({
+            type: 'success',
+            content: `✅ Found suspended addresses on ${devicesWithData.length} device(s): ${deviceNames}`
+        });
+    }
+    
+    // Warning message for devices without data (but connected successfully)
+    if (devicesWithoutData.length > 0) {
+        const deviceNames = devicesWithoutData.map(d => `${d.name} (${d.ip})`).join(', ');
+        messages.push({
+            type: 'warning',
+            content: `⚠️ Connected successfully but no suspended addresses found on ${devicesWithoutData.length} device(s): ${deviceNames}`
+        });
+    }
+    
+    // Error message for connection failures
+    if (connectionFailures.length > 0) {
+        const deviceDetails = connectionFailures.map(failure => 
+            `• ${failure.device.name} (${failure.device.ip}): ${failure.error}`
+        ).join('<br>');
+        
+        messages.push({
+            type: 'error',
+            content: `❌ Failed to connect to ${connectionFailures.length} device(s):<br>${deviceDetails}`
+        });
+    }
+    
+    // Display messages in order: success, warning, error
+    messages.forEach(msg => {
+        showMessage(msg.content, msg.type);
+    });
+    
+    // Overall summary
+    const totalDevices = selectedDevices.length;
+    const successfulConnections = devicesWithData.length + devicesWithoutData.length;
+    const totalSuspendedAddresses = combinedResults.length;
+    
+    if (totalSuspendedAddresses === 0 && successfulConnections === 0) {
+        showMessage('🔴 Could not connect to any selected devices. Please check device connectivity and SSH access.', 'error');
+    } else if (totalSuspendedAddresses === 0 && successfulConnections > 0) {
+        showMessage('🟡 All accessible devices have no suspended addresses in their firewall list.', 'warning');
+    } else {
+        showMessage(`📊 Summary: Found ${totalSuspendedAddresses} total suspended addresses from ${devicesWithData.length} device(s) out of ${totalDevices} selected.`, 'success');
+    }
+}
 
         function displayCombinedResults() {
             const container = document.getElementById('resultsContainer');
@@ -821,23 +848,19 @@
         }
 
         function showMessage(message, type) {
-            const errorDiv = document.getElementById('errorMessage');
-            const successDiv = document.getElementById('successMessage');
-            const warningDiv = document.getElementById('warningMessage');
-            
-            // Clear all message divs
-            errorDiv.innerHTML = '';
-            successDiv.innerHTML = '';
-            warningDiv.innerHTML = '';
-            
-            if (type === 'error') {
-                errorDiv.innerHTML = `<div class="error">${message}</div>`;
-            } else if (type === 'success') {
-                successDiv.innerHTML = `<div class="success">${message}</div>`;
-            } else if (type === 'warning') {
-                warningDiv.innerHTML = `<div class="warning">${message}</div>`;
-            }
-        }
+    const errorDiv = document.getElementById('errorMessage');
+    const successDiv = document.getElementById('successMessage');
+    const warningDiv = document.getElementById('warningMessage');
+    
+    // Instead of clearing all, append to the specific type
+    if (type === 'error') {
+        errorDiv.innerHTML += `<div class="error">${message}</div>`;
+    } else if (type === 'success') {
+        successDiv.innerHTML += `<div class="success">${message}</div>`;
+    } else if (type === 'warning') {
+        warningDiv.innerHTML += `<div class="warning">${message}</div>`;
+    }
+}
 
         function goBack() {
             document.getElementById('resultsSection').style.display = 'none';

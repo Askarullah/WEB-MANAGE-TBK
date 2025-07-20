@@ -5,4 +5,11 @@ POIN POIN PENGEMBANGAN:
     *nb : jika reatime akan spam login via ssh dalam range waktu tertentu
 4. USER UNTUK AKSES SSH KE TIAP CO MASIH USER INDIVIDUAL
 5. IMPLEMENTASI KE VirtualMachine
-6. TIDAK ADA LOGIC JIKA CSID TIDAK DITERMUKAN DI CO, AUTO PRINT ACTIVE JIKA CSID TIDAK DITEMUKAN DI CO/ CO TIDAK SESUAI
+6. TIDAK ADA LOGIC JIKA CSID TIDAK DITERMUKAN DI CO, AUTO PRINT ACTIVE JIKA CSID TIDAK DITEMUKAN DI CO/ CO TIDAK SESUAI 
+    POIN 6 FIXED :
+            MODIFY LOGIC :
+                1. print suspend_solnet, if found yes print suspend ; if not in suspend_solnet
+                2. print adress-list, if yes found print active, if not both
+                3. print NOT_FOUND
+
+7.

@@ -806,91 +806,83 @@ def debug_output():
         
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
+        
 @app.route('/api/mikrotik/batch-status-check', methods=['POST'])
 def batch_status_check():
-    """
-    Enhanced API endpoint for batch CSID status checking
-    Processes multiple CSIDs grouped by CO/device
-    """
     try:
         data = request.get_json()
+        
+        # Debug logging
+        app.logger.info(f"Received data: {data}")
         
         if not data or 'csids' not in data:
             return jsonify({'error': 'No CSIDs provided'}), 400
         
-        csids_data = data['csids']  # Expected format: [{'csid': 'SI-BK123456', 'co': 'CO-PN-R1', 'deviceIp': '192.168.1.1'}]
-        
-        if not csids_data:
-            return jsonify({'error': 'Empty CSIDs list'}), 400
-        
-        # Group CSIDs by device IP
-        device_groups = {}
-        for item in csids_data:
-            device_ip = item.get('deviceIp')
-            if device_ip and device_ip != 'Unknown':
-                if device_ip not in device_groups:
-                    device_groups[device_ip] = []
-                device_groups[device_ip].append(item)
-        
+        csid_items = data['csids']  # Note: Using the same parameter name as frontend
         results = []
         
+        # Group by device IP
+        device_groups = {}
+        for item in csid_items:
+            ip = item.get('deviceIp')
+            if ip and ip != 'Unknown':
+                if ip not in device_groups:
+                    device_groups[ip] = []
+                device_groups[ip].append(item)
+        
         # Process each device group
-        for device_ip, csid_items in device_groups.items():
+        for ip, items in device_groups.items():
             try:
-                # Get suspended CSIDs from this device
-                command = '/ip firewall address-list print where list="SUSPEND_SOLNET"'
-                success, output = connect_to_mikrotik(device_ip, command)
+                # First check suspended list
+                suspend_success, suspend_output = connect_to_mikrotik(
+                    ip,
+                    '/ip firewall address-list print where list="SUSPEND_SOLNET"'
+                )
                 
-                if not success:
-                    # Mark all CSIDs from this device as NOT_FOUND
-                    for item in csid_items:
-                        results.append({
-                            'csid': item['csid'],
-                            'co': item['co'],
-                            'deviceIp': device_ip,
-                            'status': 'NOT_FOUND',
-                            'error': output
-                        })
-                    continue
+                suspended_csids = []
+                if suspend_success:
+                    suspended_data = parse_mikrotik_firewall_output(suspend_output)
+                    suspended_csids = [item['csid'] for item in suspended_data if item['csid'] != 'N/A']
                 
-                # Parse the output to get suspended CSIDs
-                suspended_data = parse_mikrotik_firewall_output(output)
-                suspended_csids = [item['csid'] for item in suspended_data if item['csid'] != 'N/A']
+                # Then check main address list
+                main_success, main_output = connect_to_mikrotik(
+                    ip,
+                    '/ip firewall address-list print'
+                )
                 
-                # Check each CSID
-                for item in csid_items:
+                main_csids = []
+                if main_success:
+                    main_data = parse_mikrotik_firewall_output(main_output)
+                    main_csids = [item['csid'] for item in main_data if item['csid'] != 'N/A']
+                
+                # Determine status for each CSID
+                for item in items:
                     csid = item['csid']
-                    is_suspended = csid in suspended_csids
+                    if csid in suspended_csids:
+                        status = 'SUSPENDED'
+                    elif csid in main_csids:
+                        status = 'ACTIVE'
+                    else:
+                        status = 'NOT_FOUND'
                     
                     results.append({
                         'csid': csid,
                         'co': item['co'],
-                        'deviceIp': device_ip,
-                        'status': 'SUSPENDED' if is_suspended else 'ACTIVE',
+                        'deviceIp': ip,
+                        'status': status,
                         'error': None
                     })
                     
             except Exception as e:
-                # Mark all CSIDs from this device as NOT_FOUND due to error
-                for item in csid_items:
+                app.logger.error(f"Error processing {ip}: {str(e)}")
+                for item in items:
                     results.append({
                         'csid': item['csid'],
                         'co': item['co'],
-                        'deviceIp': device_ip,
+                        'deviceIp': ip,
                         'status': 'NOT_FOUND',
                         'error': str(e)
                     })
-        
-        # Handle CSIDs with unknown device IPs
-        for item in csids_data:
-            if not item.get('deviceIp') or item.get('deviceIp') == 'Unknown':
-                results.append({
-                    'csid': item['csid'],
-                    'co': item['co'],
-                    'deviceIp': 'Unknown',
-                    'status': 'NOT_FOUND',
-                    'error': 'No device IP mapping found'
-                })
         
         # Calculate statistics
         stats = {
@@ -907,8 +899,9 @@ def batch_status_check():
         })
         
     except Exception as e:
+        app.logger.error(f"Server error: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
-
+        
 # Optional: Add a route to serve devices configuration for the frontend
 @app.route('/api/devices/co-mapping', methods=['GET'])
 def get_co_mapping():

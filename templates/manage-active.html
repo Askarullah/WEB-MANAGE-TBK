@@ -664,80 +664,59 @@
             document.getElementById('results-section').style.display = 'none';
             document.getElementById('search-btn').disabled = true;
 
-            // Group CSIDs by CO
-            const coGroups = {};
-            parsedData.forEach(item => {
-                if (!coGroups[item.co]) {
-                    coGroups[item.co] = [];
+            try {
+                // Prepare request data
+                const requestData = parsedData.map(item => ({
+                    csid: item.csid,
+                    co: item.co,
+                    deviceIp: item.deviceIp
+                }));
+
+                console.log("Sending batch status check request:", requestData);
+
+                const response = await fetch('/api/mikrotik/batch-status-check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        csids: requestData
+                    })
+                });
+
+                const data = await response.json();
+                console.log("Received batch status response:", data);
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to check CSID statuses');
                 }
-                coGroups[item.co].push(item);
-            });
 
-            searchResults = [];
-            const totalCos = Object.keys(coGroups).length;
-            let processedCos = 0;
-
-            for (const [co, csids] of Object.entries(coGroups)) {
-                const deviceIp = coToIpMapping[co];
-                
-                updateProgress(processedCos, totalCos, `Processing ${co}...`);
-                
-                if (!deviceIp) {
-                    // Mark all CSIDs as NOT_FOUND if no device IP
-                    csids.forEach(item => {
-                        searchResults.push({
-                            ...item,
-                            status: 'NOT_FOUND',
-                            error: 'IP CO tidak di mapping'
-                        });
-                    });
+                if (data.success) {
+                    searchResults = data.results;
+                    displayResults();
+                    showAlert('Status check completed successfully', 'success');
                 } else {
-                    // Query the device
-                    try {
-                        const suspendedCsids = await queryDevice(deviceIp);
-                        
-                        // Check each CSID
-                        csids.forEach(item => {
-                            const issuspended = suspendedCsids.includes(item.csid);
-                            searchResults.push({
-                                ...item,
-                                status: issuspended ? 'SUSPENDED' : 'ACTIVE',
-                                deviceIp: deviceIp
-                            });
-                        });
-                    } catch (error) {
-                        console.error(`Error querying device ${deviceIp}:`, error);
-                        
-                        // Mark all CSIDs as NOT_FOUND on error
-                        csids.forEach(item => {
-                            searchResults.push({
-                                ...item,
-                                status: 'NOT_FOUND',
-                                error: error.message || 'Connection failed'
-                            });
-                        });
-                    }
+                    throw new Error(data.error || 'Unknown error occurred');
                 }
-                
-                processedCos++;
-                updateProgress(processedCos, totalCos, `Processed ${co}`);
-            }
 
-            // Hide loading and show results
-            document.getElementById('loading').style.display = 'none';
-            displayResults();
-            document.getElementById('search-btn').disabled = false;
+            } catch (error) {
+                console.error("Batch status check failed:", error);
+                showAlert('Status check failed: ' + error.message, 'error');
+            } finally {
+                // Reset UI state
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('search-btn').disabled = false;
+            }
         }
 
         async function queryDevice(deviceIp) {
-            const response = await fetch('/api/mikrotik/firewall-list', {
+            const response = await fetch('/api/mikrotik/batch-status-check', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    ip: deviceIp,
-                    command: '/ip firewall address-list print where list="SUSPEND_SOLNET"'
+                    csids: csidItems
                 })
             });
 

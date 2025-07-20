@@ -551,9 +551,18 @@
                 
                 if (parts.length >= 2) {
                     const csid = parts[0].trim();
-                    let co = parts[1].trim()
-                        .replace(/;$/, '')        // remove semicolon
-                        .replace(/-?\d+$/, '');   // remove -number or number at end
+                    let co = parts[1].trim();
+                    
+                    // Handle different CO formats:
+                    // Format 1: CO-MUTIARA-R1-191; -> CO-MUTIARA-R1
+                    // Format 2: CO-MUTIARA-R1 -> CO-MUTIARA-R1 (no change)
+                    
+                    // First remove semicolon if present
+                    co = co.replace(/;$/, '');
+                    
+                    // Then remove trailing dash and numbers (like -191, -001, etc.)
+                    // This keeps the main CO name with its primary identifier (like R1, R2, R3)
+                    co = co.replace(/-\d+$/, '');
                     
                     // Basic validation
                     if (csid.match(/SI-BK\d{6}/) && co.match(/CO-/)) {

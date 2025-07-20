@@ -1,10 +1,10 @@
 [
-{"name":"CO AZAM-R1-250","ip":"103.248.217.250","co":"CO-AZAM-R1","location":"AZAM Branch","description":"CO Azam"},
-{"name":"CO AZAM-R2-222","ip":"103.248.217.222","co":"CO-AZAM-R2","location":"AZAM Branch","description":"CO Azam"},
-{"name":"CO AZAM R3","ip":"103.248.217.223","co":"CO-AZAM-R3","location":"AZAM Branch","description":"CO Azam"},
-{"name":"CO AZAM R4","ip":"103.248.217.224","co":"CO-AZAM-R4","location":"AZAM Branch","description":"CO Azam"},
-{"name":"CO AZAM R5","ip":"103.248.217.225","co":"CO-AZAM-R5","location":"Azam Branch","description":"CO Azam"},
-{"name":"CO AZAM R6","ip":"103.248.217.226","co":"CO-AZAM-R6","location":"Azam Branch","description":"CO Azam"},
+{"name":"CO-AZAM-R1-250","ip":"103.248.217.250","co":"CO-AZAM-R1","location":"AZAM Branch","description":"CO Azam"},
+{"name":"CO-AZAM-R2-222","ip":"103.248.217.222","co":"CO-AZAM-R2","location":"AZAM Branch","description":"CO Azam"},
+{"name":"CO-AZAM-R3-223","ip":"103.248.217.223","co":"CO-AZAM-R3","location":"AZAM Branch","description":"CO Azam"},
+{"name":"CO-AZAM-R4-224","ip":"103.248.217.224","co":"CO-AZAM-R4","location":"AZAM Branch","description":"CO Azam"},
+{"name":"CO-AZAM-R5-225","ip":"103.248.217.225","co":"CO-AZAM-R5","location":"Azam Branch","description":"CO Azam"},
+{"name":"CO-AZAM-R6-226","ip":"103.248.217.226","co":"CO-AZAM-R6","location":"Azam Branch","description":"CO Azam"},
 {"name":"CO-AZAM-R7-227","ip":"103.248.217.227","co":"CO-AZAM-R7","location":"Azam Branch","description":"CO Azam"},
 {"name":"CO-MERAL-R1-249","ip":"103.248.217.249","co":"CO-MERAL-R1","location":"Meral Branch","description":"CO Meral"},
 {"name":"CO-MERAL-R2-212","ip":"103.248.217.212","co":"CO-MERAL-R2","location":"Meral Branch","description":"CO Meral"},
@@ -28,9 +28,9 @@
 {"name":"CO-OFFICE-R5-234","ip":"103.248.217.234","co":"CO-OFFICE-R5","location":"Office Branch","description":"CO Office"},
 {"name":"CO-OFFICE-R6-235","ip":"103.248.217.235","co":"CO-OFFICE-R6","location":"Office Branch","description":"CO Office"},
 {"name":"CO-PASIR-PANJANG-R1-161","ip":"103.248.217.161","co":"CO-PASIR-PANJANG-R1","location":"PasirPanjang Branch","description":"CO PasirPanjang"},
-{"name":"CO PN","ip":"103.248.217.248","co":"CO-PN-R1","location":"PN Branch","description":"CO PN"},
-{"name":"CO PN","ip":"103.248.217.181","co":"CO-PN-R2","location":"PN Branch","description":"CO PN"},
-{"name":"CO PN","ip":"103.248.217.182","co":"CO-PN-R3","location":"PN Branch","description":"CO PN"},
-{"name":"CO PN","ip":"103.248.217.183","co":"CO-PN-R4","location":"PN Branch","description":"CO PN"}
+{"name":"CO-PN-R1-248","ip":"103.248.217.248","co":"CO-PN-R1","location":"PN Branch","description":"CO PN"},
+{"name":"CO-PN-R2-181","ip":"103.248.217.181","co":"CO-PN-R2","location":"PN Branch","description":"CO PN"},
+{"name":"CO-PN-R3-182","ip":"103.248.217.182","co":"CO-PN-R3","location":"PN Branch","description":"CO PN"},
+{"name":"CO-PN-R4-183","ip":"103.248.217.183","co":"CO-PN-R4","location":"PN Branch","description":"CO PN"}
 
 ]

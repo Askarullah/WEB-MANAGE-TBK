@@ -403,9 +403,9 @@
                 <h2>📋 Input Data</h2>
                 <div class="input-group">
                     <label for="csid-data">Paste Excel Data (CSID and CO columns):</label>
-                    <textarea id="csid-data" placeholder="Paste your Excel data here...&#10;Example:&#10;SI-BK001234    CO-PN-R1&#10;SI-BK001235    CO-PN-R2&#10;SI-BK001236    CO-PN-R1"></textarea>
+                    <textarea id="csid-data" placeholder="Paste your Excel data here...&#10;Example:&#10;SI-BK005130    CO-PN-R4&#10;SI-BK006457    CO-PN-R4-248;&#10;SI-BK006542    CO-MERAL-R1-249;"></textarea>
                     <div class="sample-text">
-                        Expected format: Two columns separated by tab/space - CSID and CO
+                        Format yang ditolerir : CSID dan CO yang dipisah dengan Tab atau Space
                     </div>
                 </div>
                 
@@ -551,7 +551,9 @@
                 
                 if (parts.length >= 2) {
                     const csid = parts[0].trim();
-                    const co = parts[1].trim();
+                    let co = parts[1].trim()
+                        .replace(/;$/, '')        // remove semicolon
+                        .replace(/-?\d+$/, '');   // remove -number or number at end
                     
                     // Basic validation
                     if (csid.match(/SI-BK\d{6}/) && co.match(/CO-/)) {

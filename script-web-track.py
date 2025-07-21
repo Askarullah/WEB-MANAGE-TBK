@@ -833,7 +833,7 @@ def batch_status_check():
         # Process each device group
         for ip, items in device_groups.items():
             try:
-                # First check suspended list
+                # First check suspended list (SUSPEND_SOLNET)
                 suspend_success, suspend_output = connect_to_mikrotik(
                     ip,
                     '/ip firewall address-list print where list="SUSPEND_SOLNET"'
@@ -844,26 +844,77 @@ def batch_status_check():
                     suspended_data = parse_mikrotik_firewall_output(suspend_output)
                     suspended_csids = [item['csid'] for item in suspended_data if item['csid'] != 'N/A']
                 
-                # Then check main address list
+                # Then check main address list with detailed info
                 main_success, main_output = connect_to_mikrotik(
                     ip,
-                    '/ip firewall address-list print'
+                    '/ip firewall address-list print detail'
                 )
                 
-                main_csids = []
+                address_list_csids = {}
                 if main_success:
-                    main_data = parse_mikrotik_firewall_output(main_output)
-                    main_csids = [item['csid'] for item in main_data if item['csid'] != 'N/A']
+                    # Parse the detailed output to get enabled/disabled status
+                    lines = main_output.strip().split('\n')
+                    
+                    current_csid = None
+                    is_disabled = False
+                    
+                    for line in lines:
+                        line_stripped = line.strip()
+                        
+                        # Skip empty lines
+                        if not line_stripped:
+                            continue
+                        
+                        # Look for CSID in current line
+                        csid_match = re.search(r'SI-BK\d{6}', line_stripped)
+                        if csid_match:
+                            current_csid = csid_match.group()
+                        
+                        # Check if this is a status line (starts with number and optionally X)
+                        # Format examples:
+                        # "25 X ;;; SUDAH BONGKAR by Wawan"
+                        # "26   ;;; Some comment"
+                        # "27 X"
+                        status_match = re.match(r'^\s*(\d+)\s*(X)?\s*(?:;;;.*)?$', line_stripped)
+                        if status_match:
+                            x_flag = status_match.group(2)
+                            is_disabled = bool(x_flag)  # True if X is present, False otherwise
+                        
+                        # Check for explicit disabled status in any line
+                        if 'disabled=yes' in line.lower():
+                            is_disabled = True
+                        elif 'disabled=no' in line.lower():
+                            is_disabled = False
+                        
+                        # If we found a CSID and we're processing lines that belong to this entry
+                        # Look for IP address to confirm this is a complete entry
+                        ip_match = re.search(r'\b(?:\d{1,3}\.){3}\d{1,3}\b', line_stripped)
+                        if current_csid and ip_match:
+                            # Save the status for this CSID
+                            address_list_csids[current_csid] = 'disabled' if is_disabled else 'enabled'
+                            app.logger.info(f"Found CSID {current_csid} with status: {'disabled' if is_disabled else 'enabled'}")
+                            # Reset for next entry
+                            current_csid = None
+                            is_disabled = False
                 
-                # Determine status for each CSID
+                # Determine status for each CSID based on new logic
                 for item in items:
                     csid = item['csid']
+                    
+                    # Step 1: Check if in SUSPEND_SOLNET
                     if csid in suspended_csids:
                         status = 'SUSPENDED'
-                    elif csid in main_csids:
-                        status = 'ACTIVE'
+                    # Step 2: Check if in address-list
+                    elif csid in address_list_csids:
+                        if address_list_csids[csid] == 'enabled':
+                            status = 'ACTIVE'
+                        else:
+                            status = 'DISABLED'
+                    # Step 3: Not found in either
                     else:
                         status = 'NOT_FOUND'
+                    
+                    app.logger.info(f"CSID {csid}: Final status = {status}")
                     
                     results.append({
                         'csid': csid,
@@ -888,6 +939,7 @@ def batch_status_check():
         stats = {
             'active': len([r for r in results if r['status'] == 'ACTIVE']),
             'suspended': len([r for r in results if r['status'] == 'SUSPENDED']),
+            'disabled': len([r for r in results if r['status'] == 'DISABLED']),
             'not_found': len([r for r in results if r['status'] == 'NOT_FOUND']),
             'total': len(results)
         }

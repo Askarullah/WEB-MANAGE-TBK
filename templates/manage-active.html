@@ -200,6 +200,10 @@
             border-top-color: #ef4444;
         }
 
+        .stat-card.disabled {
+            border-top-color: #6b7280;
+        }
+
         .stat-card.not-found {
             border-top-color: #f59e0b;
         }
@@ -238,6 +242,11 @@
         .status-suspended {
             background: #fee2e2;
             color: #991b1b;
+        }
+
+        .status-disabled {
+            background: #f3f4f6;
+            color: #374151;
         }
 
         .status-not-found {
@@ -449,6 +458,10 @@
                     <div class="stat-card suspended">
                         <div class="stat-number" id="suspended-count">0</div>
                         <div class="stat-label">Suspended</div>
+                    </div>
+                    <div class="stat-card disabled">
+                        <div class="stat-number" id="disabled-count">0</div>
+                        <div class="stat-label">Disabled</div>
                     </div>
                     <div class="stat-card not-found">
                         <div class="stat-number" id="not-found-count">0</div>
@@ -746,6 +759,7 @@
             const stats = {
                 active: searchResults.filter(r => r.status === 'ACTIVE').length,
                 suspended: searchResults.filter(r => r.status === 'SUSPENDED').length,
+                disabled: searchResults.filter(r => r.status === 'DISABLED').length,
                 notFound: searchResults.filter(r => r.status === 'NOT_FOUND').length,
                 total: searchResults.length
             };
@@ -753,6 +767,7 @@
             // Update stats
             document.getElementById('active-count').textContent = stats.active;
             document.getElementById('suspended-count').textContent = stats.suspended;
+            document.getElementById('disabled-count').textContent = stats.disabled;
             document.getElementById('not-found-count').textContent = stats.notFound;
             document.getElementById('total-count').textContent = stats.total;
             
@@ -792,7 +807,7 @@
             document.getElementById('results-table-container').innerHTML = tableHtml;
             resultsSection.style.display = 'block';
             
-            showAlert(`Search completed! Found ${stats.active} active, ${stats.suspended} suspended, ${stats.notFound} not found.`, 'success');
+            showAlert(`Search completed! Found ${stats.active} active, ${stats.suspended} suspended, ${stats.disabled} disabled, ${stats.notFound} not found.`, 'success');
         }
 
         function exportResults() {

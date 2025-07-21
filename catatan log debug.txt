@@ -1,5 +1,12 @@
 POIN POIN PENGEMBANGAN:
 1. IP SUSPEND YANG DI TRACK DI MANAGE-ACTIVE YANG SUDAH DI DISABLE DAN DI COMMENT SUDAH BONGKAR TETAP TERBACA ACTIVE
+    POIN 1 FIXED:
+            MODIFY LOGIC :
+                1. if csid in suspend_solnet, print suspend_solnet if not do
+                2. /ip firewall address-list print detail,if csid found in list and enable print ACTIVE, 
+                if csid found but address-list disabled, print DISABLED
+                3. else: print NOT_FOUND
+
 2. STATUS PERANGKAT DI MANAGE-SUSPEND TIDAK JADI ACUAN UNTUK MENANDAKAN PERANGKAT OFFLINE ATAU ONLINE
 3. TIAP TRACK ACTIVE ATAU SUSPEND PAGE HARUS DI TRACK ATAU DI LOAD ULANG (TIDAK TRACKING SECARA REALTIME), 
     *nb : jika reatime akan spam login via ssh dalam range waktu tertentu
@@ -9,7 +16,9 @@ POIN POIN PENGEMBANGAN:
     POIN 6 FIXED :
             MODIFY LOGIC :
                 1. print suspend_solnet, if found yes print suspend ; if not in suspend_solnet
-                2. print adress-list, if yes found print active, if not both
+                2. print adress-list, if yes found print active, else :
                 3. print NOT_FOUND
-
+                4. POIN 6 LOGIC = POIN 1
 7.
+
+

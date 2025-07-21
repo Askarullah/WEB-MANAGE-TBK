@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Machine Requirements - WEB TRACK CSID Project</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+            .page-break { page-break-before: always; }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 40px;
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 210mm;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #007bff;
+        }
+        
+        .header h1 {
+            font-size: 2.2em;
+            color: #007bff;
+            margin: 0 0 10px 0;
+            font-weight: 700;
+        }
+        
+        .header .subtitle {
+            font-size: 1.1em;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        h2 {
+            color: #007bff;
+            font-size: 1.5em;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        h3 {
+            color: #495057;
+            font-size: 1.2em;
+            margin-top: 25px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        h4 {
+            color: #6c757d;
+            font-size: 1.1em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+        
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        
+        li {
+            margin-bottom: 8px;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            position: relative;
+        }
+        
+        .code-block::before {
+            content: attr(data-lang);
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            background: #007bff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 0.75em;
+            font-weight: bold;
+        }
+        
+        .inline-code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        th {
+            background: #007bff;
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        
+        .requirements-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+        
+        .req-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .req-card h4 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        
+        .req-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .req-item:last-child {
+            border-bottom: none;
+        }
+        
+        .req-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .req-value {
+            color: #6c757d;
+            text-align: right;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+        }
+        
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(0,123,255,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .print-btn:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .requirements-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding: 20px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">📄 Generate PDF</button>
+    
+    <div class="container">
+        <div class="header">
+            <h1>Virtual Machine Requirements</h1>
+            <div class="subtitle">WEB TRACK CSID Project Setup Guide</div>
+        </div>
+
+        <h2>System Requirements</h2>
+        
+        <div class="requirements-grid">
+            <div class="req-card">
+                <h4>Minimum Requirements</h4>
+                <div class="req-item">
+                    <span class="req-label">Operating System:</span>
+                    <span class="req-value">Ubuntu 20.04 LTS / Windows 10 / CentOS 8</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">RAM:</span>
+                    <span class="req-value">2 GB</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">Storage:</span>
+                    <span class="req-value">10 GB free space</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">CPU:</span>
+                    <span class="req-value">1 vCPU (2.0 GHz)</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">Network:</span>
+                    <span class="req-value">Internet connection</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">Python Version:</span>
+                    <span class="req-value">Python 3.8 or higher</span>
+                </div>
+            </div>
+            
+            <div class="req-card">
+                <h4>Recommended Requirements</h4>
+                <div class="req-item">
+                    <span class="req-label">Operating System:</span>
+                    <span class="req-value">Ubuntu 22.04 LTS / Windows 11 / Rocky Linux 9</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">RAM:</span>
+                    <span class="req-value">4 GB or more</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">Storage:</span>
+                    <span class="req-value">20 GB free space</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">CPU:</span>
+                    <span class="req-value">2 vCPU (2.4 GHz or higher)</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">Network:</span>
+                    <span class="req-value">Stable internet + MikroTik access</span>
+                </div>
+                <div class="req-item">
+                    <span class="req-label">Python Version:</span>
+                    <span class="req-value">Python 3.10 or higher</span>
+                </div>
+            </div>
+        </div>
+
+        <h2>Software Dependencies</h2>
+        
+        <h3>Core Python Packages</h3>
+        <div class="code-block" data-lang="bash"># Install these packages using pip
+pip install flask==2.3.3
+pip install flask-cors==4.0.0
+pip install pandas==2.0.3
+pip install openpyxl==3.1.2
+pip install paramiko==3.3.1
+pip install python-dotenv==1.0.0
+pip install werkzeug==2.3.7</div>
+
+        <h3>System Dependencies</h3>
+        
+        <h4>For Ubuntu/Debian:</h4>
+        <div class="code-block" data-lang="bash">sudo apt update
+sudo apt install python3 python3-pip python3-venv
+sudo apt install build-essential
+sudo apt install libffi-dev libssl-dev</div>
+
+        <h4>For Windows:</h4>
+        <ul>
+            <li>Python 3.8+ from python.org</li>
+            <li>Microsoft Visual C++ Build Tools (for some packages)</li>
+        </ul>
+
+        <h4>For CentOS/RHEL:</h4>
+        <div class="code-block" data-lang="bash">sudo yum update
+sudo yum install python3 python3-pip
+sudo yum groupinstall "Development Tools"
+sudo yum install openssl-devel libffi-devel</div>
+
+        <div class="page-break"></div>
+
+        <h2>Virtual Machine Configuration</h2>
+
+        <h3>VM Specifications</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Component</th>
+                    <th>Minimum</th>
+                    <th>Recommended</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>vCPU</td>
+                    <td>1 core</td>
+                    <td>2+ cores</td>
+                </tr>
+                <tr>
+                    <td>RAM</td>
+                    <td>2 GB</td>
+                    <td>4-8 GB</td>
+                </tr>
+                <tr>
+                    <td>Storage</td>
+                    <td>10 GB</td>
+                    <td>20-50 GB</td>
+                </tr>
+                <tr>
+                    <td>Network</td>
+                    <td>NAT/Bridged</td>
+                    <td>Bridged (for MikroTik access)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Network Configuration</h3>
+        <ul>
+            <li><strong>Port Requirements:</strong> Port 5050 (Flask app) should be accessible</li>
+            <li><strong>MikroTik Access:</strong> VM needs network access to MikroTik devices on SSH port (default 22)</li>
+            <li><strong>Firewall:</strong> Allow inbound connections on port 5050 if accessing from other machines</li>
+        </ul>
+
+        <h2>Installation Steps</h2>
+
+        <h3>1. Prepare Virtual Machine</h3>
+        <div class="code-block" data-lang="bash"># Update system
+sudo apt update && sudo apt upgrade -y  # Ubuntu/Debian
+# OR
+sudo yum update -y  # CentOS/RHEL
+
+# Install Python and pip
+sudo apt install python3 python3-pip python3-venv -y  # Ubuntu/Debian
+# OR
+sudo yum install python3 python3-pip -y  # CentOS/RHEL</div>
+
+        <h3>2. Create Project Environment</h3>
+        <div class="code-block" data-lang="bash"># Create project directory
+mkdir web-track-csid
+cd web-track-csid
+
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate  # Linux/Mac
+# OR
+venv\Scripts\activate  # Windows</div>
+
+        <h3>3. Install Dependencies</h3>
+        <div class="code-block" data-lang="bash"># Install required packages
+pip install flask flask-cors pandas openpyxl paramiko python-dotenv werkzeug
+
+# Verify installation
+pip list</div>
+
+        <h3>4. Setup Project Files</h3>
+        <div class="code-block" data-lang="bash"># Create necessary directories
+mkdir templates static
+
+# Create environment file
+touch .env</div>
+
+        <h3>5. Configure Environment Variables</h3>
+        <p>Create <span class="inline-code">.env</span> file with the following content:</p>
+        <div class="code-block" data-lang="env">FLASK_SECRET_KEY=your-super-secret-key-change-this-in-production
+MAX_CONTENT_LENGTH=52428800
+MIKROTIK_SSH_PORT=22
+MIKROTIK_USERNAME=admin
+MIKROTIK_PASSWORD=your-mikrotik-password</div>
+
+        <h3>6. Create Device Configuration Files</h3>
+        <p>Create <span class="inline-code">devices-active.json</span>:</p>
+        <div class="code-block" data-lang="json">[
+  {
+    "name": "Device 1",
+    "ip": "192.168.1.1",
+    "co": "CO001",
+    "location": "Main Office"
+  }
+]</div>
+
+        <p>Create <span class="inline-code">devices-suspend.json</span>:</p>
+        <div class="code-block" data-lang="json">[
+  {
+    "name": "Suspend Device 1",
+    "ip": "192.168.1.2",
+    "location": "Branch Office"
+  }
+]</div>
+
+        <div class="page-break"></div>
+
+        <h2>Performance Considerations</h2>
+
+        <h3>Memory Usage</h3>
+        <ul>
+            <li><strong>Base Flask app:</strong> ~50-100 MB</li>
+            <li><strong>Excel file processing:</strong> +100-500 MB (depending on file size)</li>
+            <li><strong>MikroTik connections:</strong> +10-20 MB per active connection</li>
+            <li><strong>Browser rendering:</strong> +200-500 MB</li>
+        </ul>
+
+        <h3>Storage Usage</h3>
+        <ul>
+            <li><strong>Application files:</strong> ~5-10 MB</li>
+            <li><strong>Python environment:</strong> ~200-500 MB</li>
+            <li><strong>Excel files:</strong> Variable (depends on uploaded files)</li>
+            <li><strong>Logs:</strong> ~10-50 MB (over time)</li>
+        </ul>
+
+        <h3>Network Requirements</h3>
+        <ul>
+            <li><strong>Bandwidth:</strong> Minimum 1 Mbps for web interface</li>
+            <li><strong>Latency:</strong> <100ms to MikroTik devices for responsive SSH connections</li>
+            <li><strong>Concurrent users:</strong> Up to 5-10 simultaneous users (with recommended specs)</li>
+        </ul>
+
+        <h2>Security Considerations</h2>
+
+        <h3>VM Security</h3>
+        <ul>
+            <li>Keep OS and packages updated</li>
+            <li>Configure firewall (UFW on Ubuntu, Windows Firewall)</li>
+            <li>Use strong passwords for VM access</li>
+            <li>Enable SSH key authentication if using SSH</li>
+        </ul>
+
+        <h3>Application Security</h3>
+        <ul>
+            <li>Change default Flask secret key</li>
+            <li>Use strong MikroTik credentials</li>
+            <li>Limit network access to required ports only</li>
+            <li>Consider using HTTPS in production</li>
+        </ul>
+
+        <h3>File Permissions</h3>
+        <div class="code-block" data-lang="bash"># Set appropriate permissions
+chmod 755 /path/to/project
+chmod 644 *.py *.json
+chmod 600 .env  # Keep environment file secure</div>
+
+        <h2>Troubleshooting Common Issues</h2>
+
+        <h3>Low Memory Issues</h3>
+        <ul>
+            <li>Increase VM RAM to 4GB+</li>
+            <li>Process Excel files in chunks</li>
+            <li>Limit concurrent users</li>
+        </ul>
+
+        <h3>Network Connectivity Issues</h3>
+        <ul>
+            <li>Verify VM network adapter settings</li>
+            <li>Check firewall rules</li>
+            <li>Test MikroTik SSH connectivity manually</li>
+        </ul>
+
+        <h3>Package Installation Issues</h3>
+        <ul>
+            <li>Update pip: <span class="inline-code">python -m pip install --upgrade pip</span></li>
+            <li>Install build tools if compilation fails</li>
+            <li>Use virtual environment to avoid conflicts</li>
+        </ul>
+
+        <h2>Monitoring and Maintenance</h2>
+
+        <h3>Log Files Location</h3>
+        <ul>
+            <li><strong>Flask logs:</strong> Check console output or configure logging</li>
+            <li><strong>System logs:</strong> <span class="inline-code">/var/log/</span> (Linux) or Event Viewer (Windows)</li>
+        </ul>
+
+        <h3>Regular Maintenance</h3>
+        <ul>
+            <li>Update Python packages monthly</li>
+            <li>Monitor disk space usage</li>
+            <li>Backup configuration files and data</li>
+            <li>Review security updates</li>
+        </ul>
+
+        <h2>Backup Strategy</h2>
+
+        <h3>Critical Files to Backup</h3>
+        <ul>
+            <li><span class="inline-code">app.py</span> (main application)</li>
+            <li><span class="inline-code">devices-active.json</span> and <span class="inline-code">devices-suspend.json</span></li>
+            <li><span class="inline-code">.env</span> file (securely)</li>
+            <li><span class="inline-code">templates/</span> directory</li>
+            <li>Any uploaded Excel files</li>
+        </ul>
+
+        <h3>Backup Commands</h3>
+        <div class="code-block" data-lang="bash"># Create backup
+tar -czf backup-$(date +%Y%m%d).tar.gz app.py *.json templates/ .env
+
+# Restore backup
+tar -xzf backup-YYYYMMDD.tar.gz</div>
+
+        <div class="info">
+            <strong>Note:</strong> This configuration should provide a stable environment for running your WEB TRACK CSID application with MikroTik integration.
+        </div>
+    </div>
+
+    <script>
+        // Auto-print functionality
+        function generatePDF() {
+            window.print();
+        }
+        
+        // Add some interactivity for better user experience
+        document.addEventListener('DOMContentLoaded', function() {
+            // Smooth scrolling for better navigation
+            const links = document.querySelectorAll('a[href^="#"]');
+            links.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

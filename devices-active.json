@@ -32,6 +32,7 @@
 {"name":"CO-PN-R1-248","ip":"103.248.217.248","co":"CO-PN-R1","location":"PN Branch","description":"CO PN"},
 {"name":"CO-PN-R2-181","ip":"103.248.217.181","co":"CO-PN-R2","location":"PN Branch","description":"CO PN"},
 {"name":"CO-PN-R3-182","ip":"103.248.217.182","co":"CO-PN-R3","location":"PN Branch","description":"CO PN"},
-{"name":"CO-PN-R4-183","ip":"103.248.217.183","co":"CO-PN-R4","location":"PN Branch","description":"CO PN"}
+{"name":"CO-PN-R4-183","ip":"103.248.217.183","co":"CO-PN-R4","location":"PN Branch","description":"CO PN"},
+{"name":"CO-PN-R5-184","ip":"103.248.217.184","co":"CO-PN-R5","location":"PN Branch","description":"CO PN"}
 
 ]

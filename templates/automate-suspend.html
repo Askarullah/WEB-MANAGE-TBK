@@ -403,15 +403,181 @@
             font-size: 0.9em;
             margin-top: 10px;
         }
+
+        /* Login Modal Styles */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-modal {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .login-modal h2 {
+            color: #4f46e5;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+        }
+
+        .login-form .input-group {
+            margin-bottom: 20px;
+        }
+
+        .login-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .login-form select,
+        .login-form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .login-form select:focus,
+        .login-form textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .login-form textarea {
+            min-height: 80px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        .login-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .login-buttons .btn {
+            flex: 1;
+            justify-content: center;
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }
+
+        .btn-cancel:hover {
+            box-shadow: 0 8px 15px rgba(107, 114, 128, 0.3);
+        }
+
+        /* Logged in user display */
+        .user-info {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .user-info:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-info .user-icon {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .user-info.hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
+    <!-- Login Modal -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-modal">
+            <h2>🔐 MikroTik Login</h2>
+            <form class="login-form" id="loginForm">
+                <div class="input-group">
+                    <label for="mikrotikUser">Select User:</label>
+                    <select id="mikrotikUser" required>
+                        <option value="">-- Select User --</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="mikrotikPassword">Password:</label>
+                    <textarea id="mikrotikPassword" placeholder="Enter MikroTik password..." required></textarea>
+                </div>
+                <div class="login-buttons">
+                    <button type="button" class="btn btn-cancel" onclick="cancelLogin()">Cancel</button>
+                    <button type="submit" class="btn success">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="container">
         <div class="header">
             <a href="/" class="home-button">
                 <i class="fas fa-home"></i>
                 <span>Home</span>
             </a>
+            <div class="user-info hidden" id="userInfo">
+                <div class="user-icon">👤</div>
+                <span id="userDisplay">Not logged in</span>
+            </div>
             <h1>MikroTik Dashboard</h1>
             <p>Manage CO Tanjung Balai Karimun</p>
         </div>
@@ -492,10 +658,14 @@
                     filteredDevices = [...devices];
                     loadDevices();
                     updateDeviceCount();
+                    
+                    // Load credentials and show login modal after devices are loaded
+                    loadCredentialsAndShowLogin();
                 })
                 .catch(error => {
                     console.error('Error loading devices:', error);
                     showMessage('Error loading devices. Please try again later.', 'error');
+                    loadCredentialsAndShowLogin(); // Still show login even if devices fail to load
                 });
         });
 
@@ -655,7 +825,7 @@
             progressText.textContent = `Connecting to ${device.name}... (${i + 1}/${selectedDevices.length})`;
             progressFill.style.width = `${(i / selectedDevices.length) * 100}%`;
             
-            // Make API call
+            // Make API call with credentials
             const response = await fetch('/api/mikrotik/firewall-list', {
                 method: 'POST',
                 headers: {
@@ -663,7 +833,9 @@
                 },
                 body: JSON.stringify({
                     ip: device.ip,
-                    command: '/ip firewall address-list print where list="SUSPEND_SOLNET"'
+                    command: '/ip firewall address-list print where list="SUSPEND_SOLNET"',
+                    username: mikrotikCredentials.user,
+                    password: mikrotikCredentials.password
                 })
             });
             
@@ -865,6 +1037,142 @@
         function goBack() {
             document.getElementById('resultsSection').style.display = 'none';
             document.getElementById('deviceGrid').parentElement.style.display = 'block';
+        }
+
+        // Login functionality
+        let mikrotikCredentials = {
+            user: '',
+            password: ''
+        };
+
+        async function loadCredentialsAndShowLogin() {
+            try {
+                const response = await fetch('/api/mikrotik-credentials');
+                const data = await response.json();
+                
+                if (data.success && data.credentials.length > 0) {
+                    const userSelect = document.getElementById('mikrotikUser');
+                    
+                    // Clear existing options except the first one
+                    userSelect.innerHTML = '<option value="">-- Select User --</option>';
+                    
+                    // Add credentials from API
+                    data.credentials.forEach(cred => {
+                        const option = document.createElement('option');
+                        option.value = cred.username;
+                        option.textContent = cred.username + (cred.hasPassword ? ' (has password)' : ' (no password)');
+                        option.dataset.hasPassword = cred.hasPassword;
+                        userSelect.appendChild(option);
+                    });
+                    
+                    console.log('Loaded credentials:', data.credentials);
+                } else {
+                    console.warn('No credentials found, using default options');
+                }
+            } catch (error) {
+                console.error('Error loading credentials:', error);
+                showMessage('Warning: Could not load user credentials from server.', 'warning');
+            }
+            
+            showLoginModal();
+        }
+
+        function showLoginModal() {
+            document.getElementById('loginOverlay').style.display = 'flex';
+        }
+
+        function hideLoginModal() {
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+
+        function cancelLogin() {
+            // Redirect to home page or show warning
+            if (confirm('You need to login to access this page. Go back to home?')) {
+                window.location.href = '/';
+            }
+        }
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const userSelect = document.getElementById('mikrotikUser');
+            const user = userSelect.value;
+            const password = document.getElementById('mikrotikPassword').value;
+            
+            if (!user) {
+                showMessage('Please select a user.', 'warning');
+                return;
+            }
+            
+            // Check if selected user has a stored password
+            const selectedOption = userSelect.options[userSelect.selectedIndex];
+            const hasStoredPassword = selectedOption.dataset.hasPassword === 'true';
+            
+            // Validate password requirement
+            if (!hasStoredPassword && !password) {
+                showMessage('This user requires a password. Please enter the password.', 'warning');
+                return;
+            }
+            
+            // Store credentials
+            mikrotikCredentials.user = user;
+            mikrotikCredentials.password = hasStoredPassword ? 'stored' : password;
+            
+            // Update user display
+            updateUserDisplay(user, hasStoredPassword);
+            
+            // Hide login modal
+            hideLoginModal();
+            
+            const passwordStatus = hasStoredPassword ? '(using stored password)' : '(using entered password)';
+            showMessage(`Logged in as ${user} ${passwordStatus}. You can now use the application.`, 'success');
+        });
+        
+        // Add event listener to handle password field visibility
+        document.getElementById('mikrotikUser').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const hasStoredPassword = selectedOption.dataset.hasPassword === 'true';
+            const passwordField = document.getElementById('mikrotikPassword');
+            const passwordGroup = passwordField.closest('.input-group');
+            
+            if (hasStoredPassword) {
+                passwordGroup.style.display = 'none';
+                passwordField.required = false;
+            } else {
+                passwordGroup.style.display = 'block';
+                passwordField.required = true;
+            }
+        });
+
+        // Modify existing connect function to include credentials
+        async function connectToSelectedDevicesWithAuth() {
+            if (!mikrotikCredentials.user || !mikrotikCredentials.password) {
+                showMessage('Please login first.', 'warning');
+                showLoginModal();
+                return;
+            }
+            
+            return originalConnectToSelectedDevices();
+        }
+
+        // Override the original function
+        const originalConnectToSelectedDevices = connectToSelectedDevices;
+        connectToSelectedDevices = connectToSelectedDevicesWithAuth;
+
+        // Function to update user display
+        function updateUserDisplay(username, hasStoredPassword) {
+            const userInfo = document.getElementById('userInfo');
+            const userDisplay = document.getElementById('userDisplay');
+            
+            if (username) {
+                const passwordStatus = hasStoredPassword ? '🔑' : '🔐';
+                userDisplay.textContent = `${username} ${passwordStatus}`;
+                userInfo.classList.remove('hidden');
+            } else {
+                userDisplay.textContent = 'Not logged in';
+                userInfo.classList.add('hidden');
+            }
         }
     </script>
 </body>

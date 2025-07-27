@@ -97,11 +97,41 @@ def load_devices_suspend():
         print(f"Error loading devices: {e}")
         return []
 
-def connect_to_mikrotik(ip, command):
+def get_stored_password_for_user(username):
+    """
+    Get stored password for a specific username from environment variables
+    """
+    # Check all possible username/password combinations
+    for i in range(1, 11):
+        if i == 1:
+            env_username = os.getenv('MIKROTIK_USERNAME')
+            env_password = os.getenv('MIKROTIK_PASSWORD')
+        else:
+            env_username = os.getenv(f'MIKROTIK_USERNAME_{i}')
+            env_password = os.getenv(f'MIKROTIK_PASSWORD_{i}')
+        
+        if env_username == username and env_password:
+            return env_password
+    
+    return None
+
+def connect_to_mikrotik(ip, command, username=None, password=None):
     """
     Enhanced MikroTik connection function with better error handling
+    Now accepts optional username and password parameters
     """
     ssh_client = None
+    
+    # Use provided credentials or fall back to environment variables
+    auth_username = username if username else MIKROTIK_USERNAME
+    auth_password = password if password else MIKROTIK_PASSWORD
+    
+    # If password is 'stored', get it from environment variables
+    if password == 'stored':
+        auth_password = get_stored_password_for_user(username)
+        if not auth_password:
+            return False, f"No stored password found for user {username}"
+    
     try:
         # Create SSH client with more specific settings
         ssh_client = paramiko.SSHClient()
@@ -110,13 +140,13 @@ def connect_to_mikrotik(ip, command):
         # Additional SSH client configuration
         ssh_client.load_system_host_keys()
         
-        print(f"Attempting to connect to {ip}:{MIKROTIK_SSH_PORT}")
+        print(f"Attempting to connect to {ip}:{MIKROTIK_SSH_PORT} as {auth_username}")
         
         # Connect to MikroTik with enhanced parameters
         ssh_client.connect(
             hostname=ip,
-            username=MIKROTIK_USERNAME,
-            password=MIKROTIK_PASSWORD,
+            username=auth_username,
+            password=auth_password,
             port=MIKROTIK_SSH_PORT,
             timeout=30,  # Increased timeout
             auth_timeout=30,  # Authentication timeout
@@ -160,12 +190,12 @@ def connect_to_mikrotik(ip, command):
         return False, error_msg
         
     except socket.timeout:
-        error_msg = f"Connection timeout to {ip}:{SSH_PORT}"
+        error_msg = f"Connection timeout to {ip}:{MIKROTIK_SSH_PORT}"
         print(error_msg)
         return False, error_msg
         
     except socket.error as e:
-        error_msg = f"Network error connecting to {ip}:{SSH_PORT}: {str(e)}"
+        error_msg = f"Network error connecting to {ip}:{MIKROTIK_SSH_PORT}: {str(e)}"
         print(error_msg)
         return False, error_msg
         
@@ -190,20 +220,20 @@ def test_mikrotik_connection_detailed(ip):
     """
     import socket
     
-    print(f"=== Testing connection to {ip}:{SSH_PORT} ===")
+    print(f"=== Testing connection to {ip}:{MIKROTIK_SSH_PORT} ===")
     
     # Test 1: Basic network connectivity
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10)
-        result = sock.connect_ex((ip, SSH_PORT))
+        result = sock.connect_ex((ip, MIKROTIK_SSH_PORT))
         sock.close()
         
         if result == 0:
             print("✓ Network connectivity: OK")
         else:
             print(f"✗ Network connectivity: FAILED (error code: {result})")
-            return False, f"Cannot reach {ip}:{SSH_PORT}"
+            return False, f"Cannot reach {ip}:{MIKROTIK_SSH_PORT}"
             
     except Exception as e:
         print(f"✗ Network connectivity: FAILED ({e})")
@@ -670,6 +700,7 @@ def reset_file():
 def get_firewall_list():
     """
     API endpoint to get firewall address list from MikroTik device
+    Now accepts credentials from frontend
     """
     try:
         data = request.get_json()
@@ -679,12 +710,14 @@ def get_firewall_list():
         
         ip = data.get('ip')
         command = data.get('command', '/ip firewall address-list print where list="SUSPEND_SOLNET"')
+        username = data.get('username')
+        password = data.get('password')
         
         if not ip:
             return jsonify({'error': 'IP address is required'}), 400
         
-        # Connect to MikroTik and execute command
-        success, output = connect_to_mikrotik(ip, command)
+        # Connect to MikroTik and execute command with provided credentials
+        success, output = connect_to_mikrotik(ip, command, username, password)
         
         if not success:
             return jsonify({'error': output}), 500
@@ -710,12 +743,14 @@ def test_connection():
     try:
         data = request.get_json()
         ip = data.get('ip')
+        username = data.get('username')
+        password = data.get('password')
         
         if not ip:
             return jsonify({'error': 'IP address is required'}), 400
         
         # Test connection with a simple command
-        success, output = connect_to_mikrotik(ip, '/system identity print')
+        success, output = connect_to_mikrotik(ip, '/system identity print', username, password)
         
         if success:
             return jsonify({
@@ -741,12 +776,14 @@ def get_list_names():
     try:
         data = request.get_json()
         ip = data.get('ip')
+        username = data.get('username')
+        password = data.get('password')
         
         if not ip:
             return jsonify({'error': 'IP address is required'}), 400
         
         # Get all address-lists to see available list names
-        success, output = connect_to_mikrotik(ip, '/ip firewall address-list print')
+        success, output = connect_to_mikrotik(ip, '/ip firewall address-list print', username, password)
         
         if not success:
             return jsonify({'error': output}), 500
@@ -781,12 +818,14 @@ def debug_output():
         data = request.get_json()
         ip = data.get('ip')
         command = data.get('command', '/ip firewall address-list print where list="SUSPEND_SOLNET"')
+        username = data.get('username')
+        password = data.get('password')
         
         if not ip:
             return jsonify({'error': 'IP address is required'}), 400
         
         # Connect to MikroTik and execute command
-        success, output = connect_to_mikrotik(ip, command)
+        success, output = connect_to_mikrotik(ip, command, username, password)
         
         if not success:
             return jsonify({'error': output}), 500
@@ -819,6 +858,8 @@ def batch_status_check():
             return jsonify({'error': 'No CSIDs provided'}), 400
         
         csid_items = data['csids']  # Note: Using the same parameter name as frontend
+        username = data.get('username')
+        password = data.get('password')
         results = []
         
         # Group by device IP
@@ -836,7 +877,9 @@ def batch_status_check():
                 # First check suspended list (SUSPEND_SOLNET)
                 suspend_success, suspend_output = connect_to_mikrotik(
                     ip,
-                    '/ip firewall address-list print where list="SUSPEND_SOLNET"'
+                    '/ip firewall address-list print where list="SUSPEND_SOLNET"',
+                    username=username,
+                    password=password
                 )
                 
                 suspended_csids = []
@@ -847,7 +890,9 @@ def batch_status_check():
                 # Then check main address list with detailed info
                 main_success, main_output = connect_to_mikrotik(
                     ip,
-                    '/ip firewall address-list print detail'
+                    '/ip firewall address-list print detail',
+                    username=username,
+                    password=password
                 )
                 
                 address_list_csids = {}
@@ -992,6 +1037,40 @@ def get_devices_active():
     """
     devices = load_devices_active() 
     return jsonify({'devices': devices})
+
+@app.route('/api/mikrotik-credentials', methods=['GET'])
+def get_mikrotik_credentials():
+    """
+    Get available MikroTik users from environment variables
+    """
+    try:
+        credentials = []
+        
+        # Read all available users (up to 10 for safety)
+        for i in range(1, 11):
+            if i == 1:
+                username_key = 'MIKROTIK_USERNAME'
+                password_key = 'MIKROTIK_PASSWORD'
+            else:
+                username_key = f'MIKROTIK_USERNAME_{i}'
+                password_key = f'MIKROTIK_PASSWORD_{i}'
+            
+            username = os.getenv(username_key)
+            password = os.getenv(password_key)
+            
+            if username:
+                credentials.append({
+                    'username': username,
+                    'hasPassword': bool(password and password.strip())
+                })
+        
+        return jsonify({
+            'success': True,
+            'credentials': credentials
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Failed to load credentials: {str(e)}'}), 500
 
 if __name__ == '__main__':
     print("Starting WEB TRACK CSID with MikroTik Integration...")

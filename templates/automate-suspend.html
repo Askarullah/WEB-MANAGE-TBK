@@ -542,6 +542,52 @@
         .user-info.hidden {
             display: none;
         }
+
+        /* Status checking indicator */
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.checking {
+            background: rgba(59, 130, 246, 0.9);
+        }
+
+        .status-indicator.disabled {
+            background: rgba(107, 114, 128, 0.9);
+        }
+
+        .status-indicator .pulse {
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .device-card .status-timestamp {
+            font-size: 0.7em;
+            color: #9ca3af;
+            margin-top: 5px;
+        }
     </style>
 </head>
 <body>
@@ -566,6 +612,12 @@
                 </div>
             </form>
         </div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator" id="statusIndicator">
+        <div class="pulse"></div>
+        <span id="statusText">Auto Status Check: ON</span>
     </div>
 
     <div class="container">
@@ -593,6 +645,12 @@
                     </button>
                     <button class="btn secondary" onclick="clearSelection()">Clear Selection</button>
                     <button class="btn secondary" onclick="selectAll()">Select All</button>
+                    <button class="btn" id="manualCheckBtn" onclick="manualStatusCheck()">
+                        Check Status Now
+                    </button>
+                    <button class="btn secondary" id="statusToggleBtn" onclick="toggleStatusChecking()">
+                        Disable Auto Status Check
+                    </button>
                 </div>
                 
                 <div class="filter-section">
@@ -601,6 +659,7 @@
                         <option value="Azam Branch">CO AZAM</option>
                         <option value="Meral Branch">CO MERAL</option>
                         <option value="Mutiara Branch">CO MUTIARA</option>
+                        <option value="PN Branch">CO PN</option>
                         <option value="Office Branch">CO OFFICE</option>
                         <option value="PasirPanjang Branch">CO PASIR PANJANG</option>
                     </select>
@@ -647,11 +706,22 @@
         let filteredDevices = [];
         let selectedDevices = [];
         let combinedResults = [];
+        let statusCheckInterval = null;
+        let isStatusCheckingEnabled = false;
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            // Fetch devices from API
-            fetch('/api/devices-suspend')
+            // Fetch devices from API with initial status check
+            loadDevicesWithStatus(true);
+            
+            // Start periodic status checking every 30 seconds
+            startPeriodicStatusCheck();
+        });
+        
+        function loadDevicesWithStatus(initialLoad = false) {
+            const url = initialLoad ? '/api/devices-suspend?check_status=true' : '/api/devices-suspend';
+            
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     devices = data.devices;
@@ -659,15 +729,204 @@
                     loadDevices();
                     updateDeviceCount();
                     
-                    // Load credentials and show login modal after devices are loaded
-                    loadCredentialsAndShowLogin();
+                    if (initialLoad) {
+                        // Load credentials and show login modal after devices are loaded
+                        loadCredentialsAndShowLogin();
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading devices:', error);
                     showMessage('Error loading devices. Please try again later.', 'error');
-                    loadCredentialsAndShowLogin(); // Still show login even if devices fail to load
+                    if (initialLoad) {
+                        loadCredentialsAndShowLogin(); // Still show login even if devices fail to load
+                    }
                 });
-        });
+        }
+        
+        function startPeriodicStatusCheck() {
+            // Check status every 30 seconds
+            statusCheckInterval = setInterval(() => {
+                if (isStatusCheckingEnabled) {
+                    checkDevicesStatusRealtime();
+                }
+            }, 30000);
+            
+            // Enable status checking by default
+            isStatusCheckingEnabled = true;
+        }
+        
+        function stopPeriodicStatusCheck() {
+            if (statusCheckInterval) {
+                clearInterval(statusCheckInterval);
+                statusCheckInterval = null;
+            }
+            isStatusCheckingEnabled = false;
+        }
+        
+        function toggleStatusChecking() {
+            isStatusCheckingEnabled = !isStatusCheckingEnabled;
+            const button = document.getElementById('statusToggleBtn');
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (button) {
+                button.textContent = isStatusCheckingEnabled ? 'Disable Auto Status Check' : 'Enable Auto Status Check';
+                button.className = isStatusCheckingEnabled ? 'btn secondary' : 'btn success';
+            }
+            
+            if (indicator && statusText) {
+                if (isStatusCheckingEnabled) {
+                    indicator.className = 'status-indicator';
+                    statusText.textContent = 'Auto Status Check: ON';
+                } else {
+                    indicator.className = 'status-indicator disabled';
+                    statusText.textContent = 'Auto Status Check: OFF';
+                }
+            }
+        }
+        
+        async function checkDevicesStatusRealtime() {
+            if (devices.length === 0) return;
+            
+            // Update status indicator
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (indicator && statusText) {
+                indicator.className = 'status-indicator checking';
+                statusText.textContent = 'Checking device status...';
+            }
+            
+            try {
+                const deviceIps = devices.map(device => device.ip);
+                
+                const response = await fetch('/api/devices-suspend/status-check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        device_ips: deviceIps
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const currentTime = new Date().toLocaleTimeString();
+                    let statusChanges = 0;
+                    
+                    // Update device status in memory
+                    devices.forEach(device => {
+                        if (data.status_results[device.ip]) {
+                            const newStatus = data.status_results[device.ip];
+                            if (device.status !== newStatus) {
+                                device.status = newStatus;
+                                device.lastStatusChange = currentTime;
+                                updateDeviceCardStatus(device);
+                                statusChanges++;
+                            }
+                        }
+                    });
+                    
+                    // Update filtered devices
+                    filteredDevices = devices.filter(device => {
+                        const locationFilter = document.getElementById('locationFilter').value;
+                        const statusFilter = document.getElementById('statusFilter').value;
+                        const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+                        
+                        const matchesLocation = !locationFilter || device.location === locationFilter;
+                        const matchesStatus = !statusFilter || device.status === statusFilter;
+                        const matchesSearch = !searchFilter || 
+                            device.name.toLowerCase().includes(searchFilter) ||
+                            device.ip.includes(searchFilter);
+                        
+                        return matchesLocation && matchesStatus && matchesSearch;
+                    });
+                    
+                    updateDeviceCount();
+                    
+                    // Update status indicator with results
+                    if (indicator && statusText) {
+                        if (statusChanges > 0) {
+                            statusText.textContent = `Status updated: ${statusChanges} device(s) changed`;
+                            setTimeout(() => {
+                                if (isStatusCheckingEnabled) {
+                                    statusText.textContent = 'Auto Status Check: ON';
+                                    indicator.className = 'status-indicator';
+                                }
+                            }, 3000);
+                        } else {
+                            statusText.textContent = `Last check: ${currentTime}`;
+                            setTimeout(() => {
+                                if (isStatusCheckingEnabled) {
+                                    statusText.textContent = 'Auto Status Check: ON';
+                                    indicator.className = 'status-indicator';
+                                }
+                            }, 2000);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking device status:', error);
+                
+                // Reset status indicator on error
+                if (indicator && statusText) {
+                    statusText.textContent = 'Status check failed';
+                    setTimeout(() => {
+                        if (isStatusCheckingEnabled) {
+                            statusText.textContent = 'Auto Status Check: ON';
+                            indicator.className = 'status-indicator';
+                        }
+                    }, 3000);
+                }
+            }
+        }
+        
+        function updateDeviceCardStatus(device) {
+            const deviceCard = document.getElementById(`device-${device.ip}`);
+            if (deviceCard) {
+                const statusElement = deviceCard.querySelector('.status');
+                if (statusElement) {
+                    statusElement.className = `status ${device.status}`;
+                    statusElement.textContent = device.status.toUpperCase();
+                    
+                    // Add visual feedback for status change
+                    deviceCard.style.transform = 'scale(1.02)';
+                    deviceCard.style.transition = 'transform 0.3s ease';
+                    setTimeout(() => {
+                        deviceCard.style.transform = '';
+                    }, 300);
+                }
+                
+                // Update or add timestamp
+                let timestampElement = deviceCard.querySelector('.status-timestamp');
+                if (!timestampElement) {
+                    timestampElement = document.createElement('div');
+                    timestampElement.className = 'status-timestamp';
+                    deviceCard.appendChild(timestampElement);
+                }
+                
+                if (device.lastStatusChange) {
+                    timestampElement.textContent = `Last updated: ${device.lastStatusChange}`;
+                }
+            }
+        }
+        
+        function manualStatusCheck() {
+            const button = document.getElementById('manualCheckBtn');
+            if (button) {
+                button.disabled = true;
+                button.textContent = 'Checking...';
+            }
+            
+            checkDevicesStatusRealtime().finally(() => {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = 'Check Status Now';
+                }
+            });
+        }
 
         function loadDevices() {
             const deviceGrid = document.getElementById('deviceGrid');

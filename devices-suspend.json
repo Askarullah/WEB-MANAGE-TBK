@@ -15,6 +15,7 @@
   {"name": "CO-MERAL-R7-217", "ip": "103.248.217.217", "location": "Meral Branch", "status": "online"},
   {"name": "CO-MERAL-R8-218", "ip": "103.248.217.218", "location": "Meral Branch", "status": "online"},
   {"name": "CO-MERAL-R9-219", "ip": "103.248.217.219", "location": "Meral Branch", "status": "online"},
+  {"name": "CO-MERAL-R10-220", "ip": "103.248.217.220", "location": "Meral Branch", "status": "online"},
   {"name": "CO-MUTIARA-R1-191", "ip": "103.248.217.191", "location": "Mutiara Branch", "status": "online"},
   {"name": "CO-MUTIARA-R2-192", "ip": "103.248.217.192", "location": "Mutiara Branch", "status": "online"},
   {"name": "CO-MUTIARA-R3-193", "ip": "103.248.217.193", "location": "Mutiara Branch", "status": "online"},

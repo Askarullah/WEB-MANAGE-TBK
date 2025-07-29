@@ -543,46 +543,6 @@
             display: none;
         }
 
-        /* Status checking indicator */
-        .status-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(16, 185, 129, 0.9);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 500;
-            z-index: 999;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-        }
-
-        .status-indicator.checking {
-            background: rgba(59, 130, 246, 0.9);
-        }
-
-        .status-indicator.disabled {
-            background: rgba(107, 114, 128, 0.9);
-        }
-
-        .status-indicator .pulse {
-            width: 8px;
-            height: 8px;
-            background: currentColor;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         .device-card .status-timestamp {
             font-size: 0.7em;
             color: #9ca3af;
@@ -614,12 +574,6 @@
         </div>
     </div>
 
-    <!-- Status Indicator -->
-    <div class="status-indicator" id="statusIndicator">
-        <div class="pulse"></div>
-        <span id="statusText">Auto Status Check: ON</span>
-    </div>
-
     <div class="container">
         <div class="header">
             <a href="/" class="home-button">
@@ -647,9 +601,6 @@
                     <button class="btn secondary" onclick="selectAll()">Select All</button>
                     <button class="btn" id="manualCheckBtn" onclick="manualStatusCheck()">
                         Check Status Now
-                    </button>
-                    <button class="btn secondary" id="statusToggleBtn" onclick="toggleStatusChecking()">
-                        Disable Auto Status Check
                     </button>
                 </div>
                 
@@ -706,16 +657,11 @@
         let filteredDevices = [];
         let selectedDevices = [];
         let combinedResults = [];
-        let statusCheckInterval = null;
-        let isStatusCheckingEnabled = false;
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            // Fetch devices from API with initial status check
+            // Fetch devices from API
             loadDevicesWithStatus(true);
-            
-            // Start periodic status checking every 30 seconds
-            startPeriodicStatusCheck();
         });
         
         function loadDevicesWithStatus(initialLoad = false) {
@@ -743,59 +689,10 @@
                 });
         }
         
-        function startPeriodicStatusCheck() {
-            // Check status every 30 seconds
-            statusCheckInterval = setInterval(() => {
-                if (isStatusCheckingEnabled) {
-                    checkDevicesStatusRealtime();
-                }
-            }, 30000);
-            
-            // Enable status checking by default
-            isStatusCheckingEnabled = true;
-        }
-        
-        function stopPeriodicStatusCheck() {
-            if (statusCheckInterval) {
-                clearInterval(statusCheckInterval);
-                statusCheckInterval = null;
-            }
-            isStatusCheckingEnabled = false;
-        }
-        
-        function toggleStatusChecking() {
-            isStatusCheckingEnabled = !isStatusCheckingEnabled;
-            const button = document.getElementById('statusToggleBtn');
-            const indicator = document.getElementById('statusIndicator');
-            const statusText = document.getElementById('statusText');
-            
-            if (button) {
-                button.textContent = isStatusCheckingEnabled ? 'Disable Auto Status Check' : 'Enable Auto Status Check';
-                button.className = isStatusCheckingEnabled ? 'btn secondary' : 'btn success';
-            }
-            
-            if (indicator && statusText) {
-                if (isStatusCheckingEnabled) {
-                    indicator.className = 'status-indicator';
-                    statusText.textContent = 'Auto Status Check: ON';
-                } else {
-                    indicator.className = 'status-indicator disabled';
-                    statusText.textContent = 'Auto Status Check: OFF';
-                }
-            }
-        }
+
         
         async function checkDevicesStatusRealtime() {
             if (devices.length === 0) return;
-            
-            // Update status indicator
-            const indicator = document.getElementById('statusIndicator');
-            const statusText = document.getElementById('statusText');
-            
-            if (indicator && statusText) {
-                indicator.className = 'status-indicator checking';
-                statusText.textContent = 'Checking device status...';
-            }
             
             try {
                 const deviceIps = devices.map(device => device.ip);
@@ -846,40 +743,16 @@
                     
                     updateDeviceCount();
                     
-                    // Update status indicator with results
-                    if (indicator && statusText) {
-                        if (statusChanges > 0) {
-                            statusText.textContent = `Status updated: ${statusChanges} device(s) changed`;
-                            setTimeout(() => {
-                                if (isStatusCheckingEnabled) {
-                                    statusText.textContent = 'Auto Status Check: ON';
-                                    indicator.className = 'status-indicator';
-                                }
-                            }, 3000);
-                        } else {
-                            statusText.textContent = `Last check: ${currentTime}`;
-                            setTimeout(() => {
-                                if (isStatusCheckingEnabled) {
-                                    statusText.textContent = 'Auto Status Check: ON';
-                                    indicator.className = 'status-indicator';
-                                }
-                            }, 2000);
-                        }
+                    // Show success message
+                    if (statusChanges > 0) {
+                        showMessage(`Status check completed: ${statusChanges} device(s) status changed`, 'success');
+                    } else {
+                        showMessage(`Status check completed at ${currentTime} - No changes detected`, 'success');
                     }
                 }
             } catch (error) {
                 console.error('Error checking device status:', error);
-                
-                // Reset status indicator on error
-                if (indicator && statusText) {
-                    statusText.textContent = 'Status check failed';
-                    setTimeout(() => {
-                        if (isStatusCheckingEnabled) {
-                            statusText.textContent = 'Auto Status Check: ON';
-                            indicator.className = 'status-indicator';
-                        }
-                    }, 3000);
-                }
+                showMessage('Status check failed. Please try again.', 'error');
             }
         }
         

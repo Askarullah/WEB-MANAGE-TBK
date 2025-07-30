@@ -660,8 +660,9 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
-            // Fetch devices from API
+            // Fetch devices from API and load credentials in parallel
             loadDevicesWithStatus(true);
+            loadCredentialsAndShowLogin();
         });
         
         function loadDevicesWithStatus(initialLoad = false) {
@@ -675,10 +676,10 @@
                     loadDevices();
                     updateDeviceCount();
                     
-                    if (initialLoad) {
-                        // Load credentials and show login modal after devices are loaded
-                        loadCredentialsAndShowLogin();
-                    }
+                    // Credentials are now loaded in parallel, no need to call here
+                    // if (initialLoad) {
+                    //     loadCredentialsAndShowLogin();
+                    // }
                 })
                 .catch(error => {
                     console.error('Error loading devices:', error);

@@ -660,6 +660,8 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
+            // Load credentials immediately
+            loadCredentialsAndShowLogin();
             // Fetch devices from API
             loadDevicesWithStatus(true);
         });
@@ -675,17 +677,12 @@
                     loadDevices();
                     updateDeviceCount();
                     
-                    if (initialLoad) {
-                        // Load credentials and show login modal after devices are loaded
-                        loadCredentialsAndShowLogin();
-                    }
+                    // Credentials are already loaded on page load
                 })
                 .catch(error => {
                     console.error('Error loading devices:', error);
                     showMessage('Error loading devices. Please try again later.', 'error');
-                    if (initialLoad) {
-                        loadCredentialsAndShowLogin(); // Still show login even if devices fail to load
-                    }
+                    // Credentials are already loaded on page load
                 });
         }
         
@@ -1129,26 +1126,6 @@
             table.appendChild(tbody);
             
             container.appendChild(table);
-            
-            // Add summary info
-            const summary = document.createElement('div');
-            summary.style.marginTop = '20px';
-            summary.style.padding = '15px';
-            summary.style.background = '#f8fafc';
-            summary.style.borderRadius = '8px';
-            
-            const uniqueDevices = [...new Set(combinedResults.map(r => r.deviceIP))].length;
-            const totalSelected = selectedDevices.length;
-            const connectionErrors = totalSelected - uniqueDevices;
-            
-            let summaryText = `<strong>Summary:</strong> Found ${combinedResults.length} suspended addresses from ${uniqueDevices} device(s).`;
-            
-            if (connectionErrors > 0) {
-                summaryText += `<br><small style="color: #dc2626;">Note: ${connectionErrors} device(s) could not be accessed (check SSH connectivity).</small>`;
-            }
-            
-            summary.innerHTML = summaryText;
-            container.appendChild(summary);
         }
 
         function showMessage(message, type) {

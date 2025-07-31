@@ -9,7 +9,7 @@ import threading
 import time
 import uuid
 from werkzeug.utils import secure_filename
-import tempfile
+# Removed unused tempfile import
 import json
 from datetime import datetime
 import io
@@ -19,7 +19,7 @@ import re
 import socket
 import subprocess
 import platform
-import  dotenv
+import dotenv
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -254,75 +254,7 @@ def connect_to_mikrotik(ip, command, username=None, password=None):
                 pass
 
 
-def test_mikrotik_connection_detailed(ip):
-    """
-    Detailed connection test function
-    """
-    import socket
-    
-    print(f"=== Testing connection to {ip}:{MIKROTIK_SSH_PORT} ===")
-    
-    # Test 1: Basic network connectivity
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(10)
-        result = sock.connect_ex((ip, MIKROTIK_SSH_PORT))
-        sock.close()
-        
-        if result == 0:
-            print("✓ Network connectivity: OK")
-        else:
-            print(f"✗ Network connectivity: FAILED (error code: {result})")
-            return False, f"Cannot reach {ip}:{MIKROTIK_SSH_PORT}"
-            
-    except Exception as e:
-        print(f"✗ Network connectivity: FAILED ({e})")
-        return False, f"Network error: {e}"
-    
-    # Test 2: SSH connection and authentication
-    try:
-        ssh_client = paramiko.SSHClient()
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        
-        ssh_client.connect(
-            hostname=ip,
-            username=MIKROTIK_USERNAME,
-            password=MIKROTIK_PASSWORD,
-            port=MIKROTIK_SSH_PORT,
-            timeout=30,
-            look_for_keys=False,
-            allow_agent=False
-        )
-        
-        print("✓ SSH authentication: OK")
-        
-        # Test 3: Execute a simple command
-        stdin, stdout, stderr = ssh_client.exec_command('/system identity print', timeout=15)
-        exit_status = stdout.channel.recv_exit_status()
-        output = stdout.read().decode('utf-8', errors='ignore')
-        
-        ssh_client.close()
-        
-        if exit_status == 0:
-            print("✓ Command execution: OK")
-            print(f"Device identity: {output.strip()}")
-            return True, "Connection test successful"
-        else:
-            error = stderr.read().decode('utf-8', errors='ignore')
-            print(f"✗ Command execution: FAILED (exit status: {exit_status})")
-            return False, f"Command failed: {error}"
-            
-    except paramiko.AuthenticationException:
-        print("✗ SSH authentication: FAILED")
-        return False, "Authentication failed - check username/password"
-        
-    except paramiko.SSHException as e:
-        print(f"✗ SSH connection: FAILED ({e})")
-        return False, f"SSH error: {e}"
-        
-    except Exception as e:
-        print(f"✗ Connection test: FAILED ({e})")
-        return False, f"Test failed: {e}"
+# Removed unused test_mikrotik_connection_detailed function
 
 
 def parse_mikrotik_firewall_output(output):
@@ -718,14 +650,7 @@ def extract_suspend():
     
     return jsonify({"results": unique_data, "count": len(unique_data)})
 
-@app.route('/get-sample-text', methods=['GET'])
-def get_sample_text():
-    """Return sample text for the SUSPEND CO automation"""
-    sample_text = """0   ;;; Blocked: SI-BK003633
-     SUSPEND_SOLNET                                      10.14.25.159                                                             jul/04/2025 10:02:53
- 1   ;;; Blocked: SI-BK003831
-     SUSPEND_SOLNET                                      10.14.25.230                                                             jul/05/2025 11:56:09"""
-    return jsonify({"sample_text": sample_text})
+# Removed unused get_sample_text function
 
 @app.route('/reset_file', methods=['POST'])
 def reset_file():

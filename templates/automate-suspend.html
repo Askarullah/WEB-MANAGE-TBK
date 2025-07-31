@@ -660,9 +660,10 @@
 
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
+            // Load credentials immediately
+            loadCredentialsAndShowLogin();
             // Fetch devices from API
             loadDevicesWithStatus(true);
-            loadCredentialsAndShowLogin();
         });
         
         function loadDevicesWithStatus(initialLoad = false) {
@@ -676,10 +677,7 @@
                     loadDevices();
                     updateDeviceCount();
                     
-                    if (initialLoad) {
-                        // Load credentials and show login modal after devices are loaded
-                        loadCredentialsAndShowLogin();
-                    }
+                    // Credentials are already loaded on page load
                 })
                 .catch(error => {
                     console.error('Error loading devices:', error);

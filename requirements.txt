@@ -7,3 +7,4 @@ python-dotenv==1.0.0
 Werkzeug==2.3.7
 uuid==1.30
 requirement package
+WAWAWA

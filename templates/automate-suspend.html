@@ -229,6 +229,61 @@
         .results-table td:first-child {
             font-weight: 500;
             color: #4f46e5;
+            width: 60px;
+            text-align: center;
+        }
+
+        .results-table th:first-child {
+            width: 60px;
+            text-align: center;
+        }
+
+        .filter-row th {
+            padding: 8px 15px;
+            background: #f1f5f9;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .filter-row th:first-child {
+            background: #f8fafc;
+            border: none;
+        }
+
+        .column-filter {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.8em;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .column-filter:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+        }
+
+        .column-filter::placeholder {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .filter-controls {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-controls .btn {
+            padding: 8px 16px;
+            font-size: 0.9em;
         }
 
         .device-source {
@@ -1082,6 +1137,9 @@
     }
 }
 
+        // Global variable to store filtered results
+        let filteredResults = [];
+
         function displayCombinedResults() {
             const container = document.getElementById('resultsContainer');
             
@@ -1090,10 +1148,24 @@
                 return;
             }
             
+            // Initialize filtered results
+            filteredResults = [...combinedResults];
+            
+            // Create filter controls
+            const filterControls = document.createElement('div');
+            filterControls.className = 'filter-controls';
+            filterControls.innerHTML = `
+                <span style="font-weight: 600; color: #374151;">Table Filters:</span>
+                <button class="btn secondary" onclick="clearTableFilters()">Clear All Filters</button>
+                <button class="btn secondary" onclick="exportFilteredResults()">Export Filtered Results</button>
+                <span id="filteredCount" style="color: #6b7280; font-size: 0.9em;">Showing ${filteredResults.length} of ${combinedResults.length} results</span>
+            `;
+            
             const table = document.createElement('table');
             table.className = 'results-table';
+            table.id = 'resultsTable';
             
-            // Create table header
+            // Create table header with filters
             const thead = document.createElement('thead');
             thead.innerHTML = `
                 <tr>
@@ -1105,12 +1177,37 @@
                     <th>Date Added</th>
                     <th>Location</th>
                 </tr>
+                <tr class="filter-row">
+                    <th></th>
+                    <th><input type="text" class="column-filter" placeholder="Filter Device Name" data-column="1" onkeyup="filterTable()"></th>
+                    <th><input type="text" class="column-filter" placeholder="Filter Device IP" data-column="2" onkeyup="filterTable()"></th>
+                    <th><input type="text" class="column-filter" placeholder="Filter CSID" data-column="3" onkeyup="filterTable()"></th>
+                    <th><input type="text" class="column-filter" placeholder="Filter IP Address" data-column="4" onkeyup="filterTable()"></th>
+                    <th><input type="text" class="column-filter" placeholder="Filter Date" data-column="5" onkeyup="filterTable()"></th>
+                    <th><input type="text" class="column-filter" placeholder="Filter Location" data-column="6" onkeyup="filterTable()"></th>
+                </tr>
             `;
             table.appendChild(thead);
             
             // Create table body
             const tbody = document.createElement('tbody');
-            combinedResults.forEach((item, index) => {
+            tbody.id = 'resultsTableBody';
+            table.appendChild(tbody);
+            
+            // Clear container and add elements
+            container.innerHTML = '';
+            container.appendChild(filterControls);
+            container.appendChild(table);
+            
+            // Render table rows
+            renderTableRows();
+        }
+
+        function renderTableRows() {
+            const tbody = document.getElementById('resultsTableBody');
+            tbody.innerHTML = '';
+            
+            filteredResults.forEach((item, index) => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${index + 1}</td>
@@ -1123,9 +1220,109 @@
                 `;
                 tbody.appendChild(row);
             });
-            table.appendChild(tbody);
             
-            container.appendChild(table);
+            // Update filtered count
+            const filteredCount = document.getElementById('filteredCount');
+            if (filteredCount) {
+                filteredCount.textContent = `Showing ${filteredResults.length} of ${combinedResults.length} results`;
+            }
+        }
+
+        function filterTable() {
+            const filters = document.querySelectorAll('.column-filter');
+            const filterValues = {};
+            
+            // Get all filter values
+            filters.forEach(filter => {
+                const column = filter.dataset.column;
+                const value = filter.value.toLowerCase().trim();
+                if (value) {
+                    filterValues[column] = value;
+                }
+            });
+            
+            // Apply filters
+            filteredResults = combinedResults.filter(item => {
+                // Check each filter
+                for (const [column, filterValue] of Object.entries(filterValues)) {
+                    let cellValue = '';
+                    
+                    switch (column) {
+                        case '1': // Device Name
+                            cellValue = item.deviceName.toLowerCase();
+                            break;
+                        case '2': // Device IP
+                            cellValue = item.deviceIP.toLowerCase();
+                            break;
+                        case '3': // CSID
+                            cellValue = item.csid.toLowerCase();
+                            break;
+                        case '4': // IP Address
+                            cellValue = item.ip.toLowerCase();
+                            break;
+                        case '5': // Date Added
+                            cellValue = item.date.toLowerCase();
+                            break;
+                        case '6': // Location
+                            cellValue = item.deviceLocation.toLowerCase();
+                            break;
+                    }
+                    
+                    if (!cellValue.includes(filterValue)) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+            
+            renderTableRows();
+        }
+
+        function clearTableFilters() {
+            // Clear all filter inputs
+            document.querySelectorAll('.column-filter').forEach(filter => {
+                filter.value = '';
+            });
+            
+            // Reset filtered results
+            filteredResults = [...combinedResults];
+            renderTableRows();
+        }
+
+        function exportFilteredResults() {
+            if (filteredResults.length === 0) {
+                showMessage('No data to export.', 'warning');
+                return;
+            }
+            
+            // Create CSV content
+            const headers = ['No.', 'Device Name', 'Device IP', 'CSID', 'IP Address', 'Date Added', 'Location'];
+            const csvContent = [
+                headers.join(','),
+                ...filteredResults.map((item, index) => [
+                    index + 1,
+                    `"${item.deviceName}"`,
+                    item.deviceIP,
+                    item.csid,
+                    item.ip,
+                    item.date,
+                    `"${item.deviceLocation}"`
+                ].join(','))
+            ].join('\n');
+            
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `suspended_addresses_filtered_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showMessage(`Exported ${filteredResults.length} filtered results to CSV.`, 'success');
         }
 
         function showMessage(message, type) {

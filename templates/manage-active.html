@@ -948,6 +948,7 @@
                 <table class="results-table">
                     <thead>
                         <tr>
+                            <th>No</th>
                             <th>CSID</th>
                             <th>CO</th>
                             <th>Device IP</th>
@@ -958,10 +959,11 @@
                     <tbody>
             `;
             
-            searchResults.forEach(result => {
+            searchResults.forEach((result, index) => {
                 const statusClass = result.status.toLowerCase().replace('_', '-');
                 tableHtml += `
                     <tr>
+                        <td>${index + 1}</td>
                         <td>${result.csid}</td>
                         <td>${result.co}</td>
                         <td class="device-info">${result.deviceIp || 'Unknown'}</td>
@@ -988,7 +990,8 @@
                 return;
             }
 
-            const exportData = searchResults.map(result => ({
+            const exportData = searchResults.map((result, index) => ({
+                No: index + 1,
                 CSID: result.csid,
                 CO: result.co,
                 'Device IP': result.deviceIp || 'Unknown',

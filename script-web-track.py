@@ -38,118 +38,34 @@ MIKROTIK_SSH_PORT = int(os.getenv('MIKROTIK_SSH_PORT'))
 MIKROTIK_USERNAME = os.getenv('MIKROTIK_USERNAME')
 MIKROTIK_PASSWORD = os.getenv('MIKROTIK_PASSWORD')
 
-def show_startup_message():
-    """Show startup message"""
-    if getattr(sys, 'frozen', False):
-        print("\n" + "=" * 60)
-        print("           WEB TRACK CSID - PORTABLE VERSION")
-        print("=" * 60)
-        print("Starting the application...")
-        print("Browser will open automatically in 3 seconds...")
-        print("\nIf browser doesn't open, manually go to:")
-        print("http://localhost:5050")
-        print("\nTo stop the application, close this window.")
-        print("=" * 60 + "\n")
-
-def open_browser():
-    """Open browser after Flask starts"""
-    time.sleep(3)
-    try:
-        webbrowser.open('http://localhost:5050')
-        print("✓ Browser opened successfully!")
-    except Exception as e:
-        print(f"✗ Could not open browser automatically: {e}")
-        print("Please manually open: http://localhost:5050")
-
-def load_devices_active():
-    """
-    Load devices from JSON file
-    """
-    try:
-        # Check if devices.json exists in the same directory as app.py
-        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices-active.json')
-        if os.path.exists(devices_file):
-            with open(devices_file, 'r') as f:
-                devices = json.load(f)
-            return devices
-        else:
-            # Return empty list if file doesn't exist
-            print("Warning: devices.json not found. Using empty device list.")
-            return []
-    except Exception as e:
-        print(f"Error loading devices: {e}")
-        return []
-
-def ping_device(ip, timeout=3):
-    """
-    Ping a device to check if it's online
-    Returns True if device responds, False otherwise
-    """
-    try:
-        # Determine ping command based on operating system
-        if platform.system().lower() == "windows":
-            cmd = ["ping", "-n", "1", "-w", str(timeout * 1000), ip]
-        else:
-            cmd = ["ping", "-c", "1", "-W", str(timeout), ip]
-        
-        # Execute ping command
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 2)
-        return result.returncode == 0
-    except Exception as e:
-        print(f"Error pinging {ip}: {e}")
-        return False
-
-def check_device_status_realtime(ip):
-    """
-    Check device status using multiple methods
-    Returns 'online' or 'offline'
-    """
-    # First try ping
-    if ping_device(ip):
-        return 'online'
-    
-    # If ping fails, try SSH connection test
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(3)
-        result = sock.connect_ex((ip, MIKROTIK_SSH_PORT))
-        sock.close()
-        return 'online' if result == 0 else 'offline'
-    except Exception:
-        return 'offline'
-
-def load_devices_suspend():
-    """
-    Load devices from JSON file
-    """
-    try:
-        # Check if devices.json exists in the same directory as app.py
-        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices-suspend.json')
-        if os.path.exists(devices_file):
-            with open(devices_file, 'r') as f:
-                devices = json.load(f)
-            return devices
-        else:
-            # Return empty list if file doesn't exist
-            print("Warning: devices.json not found. Using empty device list.")
-            return []
-    except Exception as e:
-        print(f"Error loading devices: {e}")
-        return []
+# ============================================================================
+# MikroTik Authentication and SSH Connection Management
+# ============================================================================
 
 def get_stored_password_for_user(username):
     """
-    Get stored password for a specific username from environment variables
+    Retrieve stored password for a specific username from environment variables.
+    This function supports multiple username/password combinations stored in
+    the .env file (MIKROTIK_USERNAME_1 through MIKROTIK_USERNAME_10).
+    
+    Args:
+        username (str): The username to find the password for
+        
+    Returns:
+        str or None: The password if found, None otherwise
     """
-    # Check all possible username/password combinations
+    # Check all possible username/password combinations (up to 10 sets)
     for i in range(1, 11):
         if i == 1:
+            # Check primary credentials (without number suffix)
             env_username = os.getenv('MIKROTIK_USERNAME')
             env_password = os.getenv('MIKROTIK_PASSWORD')
         else:
+            # Check numbered credentials (MIKROTIK_USERNAME_2, etc.)
             env_username = os.getenv(f'MIKROTIK_USERNAME_{i}')
             env_password = os.getenv(f'MIKROTIK_PASSWORD_{i}')
         
+        # Return password if username matches and password exists
         if env_username == username and env_password:
             return env_password
     
@@ -157,110 +73,130 @@ def get_stored_password_for_user(username):
 
 def connect_to_mikrotik(ip, command, username=None, password=None):
     """
-    Enhanced MikroTik connection function with better error handling
-    Now accepts optional username and password parameters
+    Establish SSH connection to MikroTik router and execute commands.
+    This function handles authentication, connection management, command execution,
+    and comprehensive error handling for MikroTik RouterOS devices.
+    
+    Args:
+        ip (str): IP address of the MikroTik device
+        command (str): RouterOS command to execute
+        username (str, optional): Username for authentication (uses default if None)
+        password (str, optional): Password for authentication (uses default if None)
+                                 Use 'stored' to lookup password from environment
+        
+    Returns:
+        tuple: (success: bool, result: str) - Success status and command output or error message
     """
     ssh_client = None
     
-    # Use provided credentials or fall back to environment variables
+    # Determine authentication credentials
     auth_username = username if username else MIKROTIK_USERNAME
     auth_password = password if password else MIKROTIK_PASSWORD
     
-    # If password is 'stored', get it from environment variables
+    # Handle special case: lookup stored password for username
     if password == 'stored':
         auth_password = get_stored_password_for_user(username)
         if not auth_password:
             return False, f"No stored password found for user {username}"
     
     try:
-        # Create SSH client with more specific settings
+        # Initialize SSH client with security settings
         ssh_client = paramiko.SSHClient()
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        
-        # Additional SSH client configuration
-        ssh_client.load_system_host_keys()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # Accept unknown host keys
+        ssh_client.load_system_host_keys()  # Load known host keys
         
         print(f"Attempting to connect to {ip}:{MIKROTIK_SSH_PORT} as {auth_username}")
         
-        # Connect to MikroTik with enhanced parameters
+        # Establish SSH connection with comprehensive timeout settings
         ssh_client.connect(
             hostname=ip,
             username=auth_username,
             password=auth_password,
             port=MIKROTIK_SSH_PORT,
-            timeout=30,  # Increased timeout
-            auth_timeout=30,  # Authentication timeout
-            banner_timeout=30,  # Banner timeout
-            look_for_keys=False,  # Don't look for SSH keys
+            timeout=30,  # Connection timeout (30 seconds)
+            auth_timeout=30,  # Authentication timeout (30 seconds)
+            banner_timeout=30,  # Banner exchange timeout (30 seconds)
+            look_for_keys=False,  # Don't search for SSH private keys
             allow_agent=False,  # Don't use SSH agent
-            compress=False  # Disable compression
+            compress=False  # Disable compression for better compatibility
         )
         
         print(f"Successfully connected to {ip}")
         
-        # Execute command with explicit channel handling
+        # Execute RouterOS command with timeout
         stdin, stdout, stderr = ssh_client.exec_command(command, timeout=30)
         
-        # Wait for command to complete
+        # Wait for command completion and get exit status
         exit_status = stdout.channel.recv_exit_status()
         
-        # Get output
+        # Read command output and error streams
         output = stdout.read().decode('utf-8', errors='ignore')
         error = stderr.read().decode('utf-8', errors='ignore')
         
         print(f"Command executed. Exit status: {exit_status}")
         print(f"Output length: {len(output)} characters")
         
+        # Check for command execution errors
         if exit_status != 0:
             return False, f"Command failed with exit status {exit_status}: {error}"
         
+        # Check for RouterOS syntax errors
         if error and "syntax error" in error.lower():
             return False, f"MikroTik syntax error: {error}"
         
         return True, output
         
     except paramiko.AuthenticationException as e:
+        # Handle authentication failures
         error_msg = f"Authentication failed for {ip}: {str(e)}"
         print(error_msg)
         return False, error_msg
         
     except paramiko.SSHException as e:
+        # Handle SSH protocol errors
         error_msg = f"SSH connection failed to {ip}: {str(e)}"
         print(error_msg)
         return False, error_msg
         
     except socket.timeout:
+        # Handle connection timeouts
         error_msg = f"Connection timeout to {ip}:{MIKROTIK_SSH_PORT}"
         print(error_msg)
         return False, error_msg
         
     except socket.error as e:
+        # Handle network connectivity errors
         error_msg = f"Network error connecting to {ip}:{MIKROTIK_SSH_PORT}: {str(e)}"
         print(error_msg)
         return False, error_msg
         
     except Exception as e:
+        # Handle any other unexpected errors
         error_msg = f"Unexpected error connecting to {ip}: {str(e)}"
         print(error_msg)
         return False, error_msg
         
     finally:
-        # Always close the connection
+        # Ensure SSH connection is always closed
         if ssh_client:
             try:
                 ssh_client.close()
                 print(f"SSH connection to {ip} closed")
             except:
-                pass
-
-
-# Removed unused test_mikrotik_connection_detailed function
-
+                pass  # Ignore errors during cleanup
 
 def parse_mikrotik_firewall_output(output):
     """
-    Parse MikroTik firewall address-list output into structured data
-    Using the same logic as extract-suspend route
+    Parse MikroTik firewall address-list output into structured data.
+    Extracts CSID, IP addresses, and timestamps from RouterOS firewall output.
+    Uses the same logic as extract-suspend route for consistency.
+    
+    Args:
+        output (str): Raw output from MikroTik firewall address-list command
+        
+    Returns:
+        list: List of dictionaries containing parsed firewall entries
+              Each entry has: number, csid, ip, date
     """
     lines = output.strip().split('\n')
     extracted_data = []
@@ -315,8 +251,123 @@ def parse_mikrotik_firewall_output(output):
     
     return unique_data
 
+def ping_device(ip, timeout=3):
+    """
+    Ping a device to check if it's online.
+    Uses platform-specific ping commands for cross-platform compatibility.
+    
+    Args:
+        ip (str): IP address to ping
+        timeout (int): Timeout in seconds (default: 3)
+        
+    Returns:
+        bool: True if device responds, False otherwise
+    """
+    try:
+        # Determine ping command based on operating system
+        if platform.system().lower() == "windows":
+            cmd = ["ping", "-n", "1", "-w", str(timeout * 1000), ip]
+        else:
+            cmd = ["ping", "-c", "1", "-W", str(timeout), ip]
+        
+        # Execute ping command
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 2)
+        return result.returncode == 0
+    except Exception as e:
+        print(f"Error pinging {ip}: {e}")
+        return False
+
+def check_device_status_realtime(ip):
+    """
+    Check device status using multiple methods for better reliability.
+    First tries ping, then falls back to SSH port connectivity test.
+    
+    Args:
+        ip (str): IP address of the device to check
+        
+    Returns:
+        str: 'online' if device is reachable, 'offline' otherwise
+    """
+    # First try ping
+    if ping_device(ip):
+        return 'online'
+    
+    # If ping fails, try SSH connection test
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(3)
+        result = sock.connect_ex((ip, MIKROTIK_SSH_PORT))
+        sock.close()
+        return 'online' if result == 0 else 'offline'
+    except Exception:
+        return 'offline'
+
+# ============================================================================
+#           Device Management Functions (devices.json)
+# ============================================================================
+
+def load_devices_active():
+    """
+    Load active devices from JSON file.
+    Reads device configuration from devices-active.json in the same directory.
+    
+    Returns:
+        list: List of active device dictionaries with name, ip, co, location, description
+    """
+    try:
+        # Check if devices.json exists in the same directory as app.py
+        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices-active.json')
+        if os.path.exists(devices_file):
+            with open(devices_file, 'r') as f:
+                devices = json.load(f)
+            return devices
+        else:
+            # Return empty list if file doesn't exist
+            print("Warning: devices-active.json not found. Using empty device list.")
+            return []
+    except Exception as e:
+        print(f"Error loading devices: {e}")
+        return []
+
+def load_devices_suspend():
+    """
+    Load suspended devices from JSON file.
+    Reads device configuration from devices-suspend.json in the same directory.
+    
+    Returns:
+        list: List of suspended device dictionaries with name, ip, location, status
+    """
+    try:
+        # Check if devices.json exists in the same directory as app.py
+        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices-suspend.json')
+        if os.path.exists(devices_file):
+            with open(devices_file, 'r') as f:
+                devices = json.load(f)
+            return devices
+        else:
+            # Return empty list if file doesn't exist
+            print("Warning: devices-suspend.json not found. Using empty device list.")
+            return []
+    except Exception as e:
+        print(f"Error loading devices: {e}")
+        return []
+
+# ============================================================================
+#           Excel Processing Functions
+# ============================================================================
+
 def find_in_all_sheets(session_id, search_value):
-    """Find search value in all sheets for a specific session"""
+    """
+    Find search value in all sheets for a specific session.
+    Searches through all loaded Excel sheets for the specified value.
+    
+    Args:
+        session_id (str): Session identifier for workbook storage
+        search_value (str): Value to search for in the sheets
+        
+    Returns:
+        str: Comma-separated list of sheet names where value was found, or "Not Found"
+    """
     if session_id not in workbook_storage:
         return "No data loaded"
     
@@ -334,11 +385,42 @@ def find_in_all_sheets(session_id, search_value):
     else:
         return "Not Found"
 
-@app.route('/manage-active.html')
-def manage_active():
-    """Route for the Manage Active - Batch CSID Status Checker page"""
-    return render_template('manage-active.html')
+# ============================================================================
+# Utility Functions
+# ============================================================================
 
+def show_startup_message():
+    """
+    Display startup message for the application.
+    Shows application banner and instructions when running as portable version.
+    """
+    if getattr(sys, 'frozen', False):
+        print("\n" + "=" * 60)
+        print("           WEB TRACK CSID - PORTABLE VERSION")
+        print("=" * 60)
+        print("Starting the application...")
+        print("Browser will open automatically in 3 seconds...")
+        print("\nIf browser doesn't open, manually go to:")
+        print("http://localhost:5050")
+        print("\nTo stop the application, close this window.")
+        print("=" * 60 + "\n")
+
+def open_browser():
+    """
+    Open web browser automatically after Flask starts.
+    Waits 3 seconds for Flask to initialize, then opens the application URL.
+    """
+    time.sleep(3)
+    try:
+        webbrowser.open('http://localhost:5050')
+        print("✓ Browser opened successfully!")
+    except Exception as e:
+        print(f"✗ Could not open browser automatically: {e}")
+        print("Please manually open: http://localhost:5050")
+
+# ============================================================================
+#           Flask Routes - Templates HTML
+# ============================================================================
 
 @app.route('/')
 def index():
@@ -346,6 +428,32 @@ def index():
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
     return render_template('home.html')
+
+@app.route('/manage-active.html')
+def manage_active():
+    """Route for the Manage Active - Batch CSID Status Checker page"""
+    return render_template('manage-active.html')
+
+@app.route('/tracking-co.html')
+def track_home():
+    return render_template('tracking-co.html')
+
+@app.route('/tracking-odp.html')
+def track_odp():
+    return render_template('tracking-odp.html')
+    
+@app.route('/tracking-ip.html')
+def track_ip():
+    return render_template('tracking-ip.html')
+
+@app.route('/automate-suspend.html')
+def automate_suspend():
+    """Route for the SUSPEND CO automation page with MikroTik integration"""
+    return render_template('automate-suspend.html')
+
+# ============================================================================
+#           Flask Routes - SCRIPT TRACKING EXCEL
+# ============================================================================
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -389,80 +497,6 @@ def upload_file():
     except Exception as e:
         return jsonify({'error': f'Failed to load Excel file: {str(e)}'}), 500
 
-@app.route('/add_csid', methods=['POST'])
-def add_csid():
-    """Add single CSID"""
-    data = request.get_json()
-    csid = data.get('csid', '').strip()
-    
-    if not csid:
-        return jsonify({'error': 'CSID cannot be empty'}), 400
-    
-    session_id = session['session_id']
-    found_sheets = find_in_all_sheets(session_id, csid)
-    
-    return jsonify({
-        'success': True,
-        'csid': csid,
-        'found_sheets': found_sheets
-    })
-
-@app.route('/add_bulk_csids', methods=['POST'])
-def add_bulk_csids():
-    """Add multiple CSIDs"""
-    data = request.get_json()
-    csids_text = data.get('csids', '').strip()
-    
-    if not csids_text:
-        return jsonify({'error': 'No CSIDs provided'}), 400
-    
-    # Parse CSIDs
-    csids = re.split(r'[\s,;\n\t]+', csids_text)
-    csids = [csid.strip() for csid in csids if csid.strip()]
-    
-    if not csids:
-        return jsonify({'error': 'No valid CSIDs found'}), 400
-    
-    session_id = session['session_id']
-    results = []
-    
-    for csid in csids:
-        found_sheets = find_in_all_sheets(session_id, csid)
-        results.append({
-            'csid': csid,
-            'found_sheets': found_sheets
-        })
-    
-    return jsonify({
-        'success': True,
-        'results': results,
-        'count': len(results)
-    })
-
-@app.route('/refresh_csids', methods=['POST'])
-def refresh_csids():
-    """Refresh existing CSIDs"""
-    data = request.get_json()
-    csids = data.get('csids', [])
-    
-    if not csids:
-        return jsonify({'error': 'No CSIDs to refresh'}), 400
-    
-    session_id = session['session_id']
-    results = []
-    
-    for csid in csids:
-        found_sheets = find_in_all_sheets(session_id, csid)
-        results.append({
-            'csid': csid,
-            'found_sheets': found_sheets
-        })
-    
-    return jsonify({
-        'success': True,
-        'results': results
-    })
-
 @app.route('/export', methods=['POST'])
 def export_data():
     """Export data to Excel"""
@@ -492,34 +526,6 @@ def export_data():
         
     except Exception as e:
         return jsonify({'error': f'Export failed: {str(e)}'}), 500
-
-@app.route('/status')
-def get_status():
-    """Get current session status"""
-    session_id = session.get('session_id')
-    
-    if session_id in workbook_storage:
-        wb_info = workbook_storage[session_id]
-        return jsonify({
-            'loaded': True,
-            'filename': wb_info['filename'],
-            'sheets': list(wb_info['data'].keys()),
-            'upload_time': wb_info['upload_time']
-        })
-    else:
-        return jsonify({'loaded': False})
-
-@app.route('/tracking-co.html')
-def track_home():
-    return render_template('tracking-co.html')
-
-@app.route('/tracking-odp.html')
-def track_odp():
-    return render_template('tracking-odp.html')
-    
-@app.route('/tracking-ip.html')
-def track_ip():
-    return render_template('tracking-ip.html')
 
 @app.route('/search-odp', methods=['POST'])
 def search_odp():
@@ -605,11 +611,83 @@ def search_ip():
     
     return jsonify(results)
 
-# MODIFIED: Changed route to serve automate-suspend.html instead of index.html
-@app.route('/automate-suspend.html')
-def automate_suspend():
-    """Route for the SUSPEND CO automation page with MikroTik integration"""
-    return render_template('automate-suspend.html')
+# ============================================================================
+#       Flask Routes - PARSING CSID LOGIC
+# ============================================================================
+
+@app.route('/add_csid', methods=['POST'])
+def add_csid():
+    """Add single CSID"""
+    data = request.get_json()
+    csid = data.get('csid', '').strip()
+    
+    if not csid:
+        return jsonify({'error': 'CSID cannot be empty'}), 400
+    
+    session_id = session['session_id']
+    found_sheets = find_in_all_sheets(session_id, csid)
+    
+    return jsonify({
+        'success': True,
+        'csid': csid,
+        'found_sheets': found_sheets
+    })
+
+@app.route('/add_bulk_csids', methods=['POST'])
+def add_bulk_csids():
+    """Add multiple CSIDs"""
+    data = request.get_json()
+    csids_text = data.get('csids', '').strip()
+    
+    if not csids_text:
+        return jsonify({'error': 'No CSIDs provided'}), 400
+    
+    # Parse CSIDs
+    csids = re.split(r'[\s,;\n\t]+', csids_text)
+    csids = [csid.strip() for csid in csids if csid.strip()]
+    
+    if not csids:
+        return jsonify({'error': 'No valid CSIDs found'}), 400
+    
+    session_id = session['session_id']
+    results = []
+    
+    for csid in csids:
+        found_sheets = find_in_all_sheets(session_id, csid)
+        results.append({
+            'csid': csid,
+            'found_sheets': found_sheets
+        })
+    
+    return jsonify({
+        'success': True,
+        'results': results,
+        'count': len(results)
+    })
+
+@app.route('/refresh_csids', methods=['POST'])
+def refresh_csids():
+    """Refresh existing CSIDs"""
+    data = request.get_json()
+    csids = data.get('csids', [])
+    
+    if not csids:
+        return jsonify({'error': 'No CSIDs to refresh'}), 400
+    
+    session_id = session['session_id']
+    results = []
+    
+    for csid in csids:
+        found_sheets = find_in_all_sheets(session_id, csid)
+        results.append({
+            'csid': csid,
+            'found_sheets': found_sheets
+        })
+    
+    return jsonify({
+        'success': True,
+        'results': results
+    })
 
 @app.route('/extract-suspend', methods=['POST'])
 def extract_suspend():
@@ -650,7 +728,25 @@ def extract_suspend():
     
     return jsonify({"results": unique_data, "count": len(unique_data)})
 
-# Removed unused get_sample_text function
+# ============================================================================
+#       Flask Routes - MANAGEMENT SESSION EXCEL
+# ============================================================================
+
+@app.route('/status')
+def get_status():
+    """Get current session status"""
+    session_id = session.get('session_id')
+    
+    if session_id in workbook_storage:
+        wb_info = workbook_storage[session_id]
+        return jsonify({
+            'loaded': True,
+            'filename': wb_info['filename'],
+            'sheets': list(wb_info['data'].keys()),
+            'upload_time': wb_info['upload_time']
+        })
+    else:
+        return jsonify({'loaded': False})
 
 @app.route('/reset_file', methods=['POST'])
 def reset_file():
@@ -660,7 +756,10 @@ def reset_file():
         del workbook_storage[session_id]
     return jsonify({'success': True, 'message': 'File data reset successfully'})
 
-# NEW MIKROTIK API ENDPOINTS
+# ============================================================================
+#           Flask Routes - ALL API MIKROTIK SCRIPT
+# ============================================================================
+
 @app.route('/api/mikrotik/firewall-list', methods=['POST'])
 def get_firewall_list():
     """
@@ -963,8 +1062,11 @@ def batch_status_check():
     except Exception as e:
         app.logger.error(f"Server error: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
-        
-# Optional: Add a route to serve devices configuration for the frontend
+
+# ============================================================================
+#           Flask Routes - Device API Endpoints (ALL ROUTE API MIKROTIK)
+# ============================================================================
+
 @app.route('/api/devices/co-mapping', methods=['GET'])
 def get_co_mapping():
     """
@@ -1068,6 +1170,10 @@ def get_mikrotik_credentials():
         
     except Exception as e:
         return jsonify({'error': f'Failed to load credentials: {str(e)}'}), 500
+
+# ============================================================================
+# Application Entry Point
+# ============================================================================
 
 if __name__ == '__main__':
     print("Starting WEB TRACK CSID with MikroTik Integration...")

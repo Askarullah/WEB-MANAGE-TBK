@@ -436,13 +436,14 @@
                     <table class="table table-striped mb-0">
                         <thead>
                             <tr>
+                                <th><i class="fas fa-list-ol me-2"></i>No</th>
                                 <th><i class="fas fa-network-wired me-2"></i>IP Address</th>
                                 <th><i class="fas fa-id-card me-2"></i>CSID</th>
                             </tr>
                         </thead>
                         <tbody id="resultsBody">
                             <tr>
-                                <td colspan="2" class="text-center text-muted py-4">
+                                <td colspan="3" class="text-center text-muted py-4">
                                     <i class="fas fa-search fa-2x mb-2 d-block"></i>
                                     No results yet. Upload a file and search for an ODP ID.
                                 </td>
@@ -547,9 +548,10 @@
                 resultsBody.innerHTML = '';
                 
                 if (data.length > 0) {
-                    data.forEach(item => {
+                    data.forEach((item, index) => {
                         resultsBody.innerHTML += `
                             <tr>
+                                <td><strong>${index + 1}</strong></td>
                                 <td><i class="fas fa-network-wired me-2 text-primary"></i>${item.ip}</td>
                                 <td><i class="fas fa-id-card me-2 text-success"></i>${item.csid}</td>
                             </tr>
@@ -558,7 +560,7 @@
                 } else {
                     resultsBody.innerHTML = `
                         <tr>
-                            <td colspan="2" class="text-center text-muted py-4">
+                            <td colspan="3" class="text-center text-muted py-4">
                                 <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
                                 No results found for ODP ID: ${odpId}
                             </td>
@@ -571,7 +573,7 @@
                 console.error('Error:', error);
                 resultsBody.innerHTML = `
                     <tr>
-                        <td colspan="2" class="text-center text-danger py-4">
+                        <td colspan="3" class="text-center text-danger py-4">
                             <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
                             An error occurred while searching. Please try again.
                         </td>

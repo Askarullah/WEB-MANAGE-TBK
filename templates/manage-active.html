@@ -537,6 +537,56 @@
         .user-info.hidden {
             display: none;
         }
+
+        .table-filters {
+            display: grid;
+            grid-template-columns: 60px 1fr 1fr 1fr 150px 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 12px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 12px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .clear-filters-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .clear-filters-btn:hover {
+            background: #4b5563;
+        }
     </style>
 </head>
 <body>
@@ -943,9 +993,27 @@
             document.getElementById('not-found-count').textContent = stats.notFound;
             document.getElementById('total-count').textContent = stats.total;
             
+            // Create filters
+            let filtersHtml = `
+                <div class="table-filters">
+                    <div></div>
+                    <input type="text" class="filter-input" id="filter-csid" placeholder="Filter CSID..." onkeyup="filterTable()">
+                    <input type="text" class="filter-input" id="filter-co" placeholder="Filter CO..." onkeyup="filterTable()">
+                    <input type="text" class="filter-input" id="filter-ip" placeholder="Filter IP..." onkeyup="filterTable()">
+                    <select class="filter-select" id="filter-status" onchange="filterTable()">
+                        <option value="">All Status</option>
+                        <option value="ACTIVE">Active</option>
+                        <option value="SUSPENDED">Suspended</option>
+                        <option value="DISABLED">Disabled</option>
+                        <option value="NOT_FOUND">Not Found</option>
+                    </select>
+                    <button class="clear-filters-btn" onclick="clearFilters()">Clear Filters</button>
+                </div>
+            `;
+            
             // Create results table
             let tableHtml = `
-                <table class="results-table">
+                <table class="results-table" id="results-table">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -978,10 +1046,65 @@
                 </table>
             `;
             
-            document.getElementById('results-table-container').innerHTML = tableHtml;
+            document.getElementById('results-table-container').innerHTML = filtersHtml + tableHtml;
             resultsSection.style.display = 'block';
             
             showAlert(`Search completed! Found ${stats.active} active, ${stats.suspended} suspended, ${stats.disabled} disabled, ${stats.notFound} not found.`, 'success');
+        }
+
+        function filterTable() {
+            const csidFilter = document.getElementById('filter-csid').value.toLowerCase();
+            const coFilter = document.getElementById('filter-co').value.toLowerCase();
+            const ipFilter = document.getElementById('filter-ip').value.toLowerCase();
+            const statusFilter = document.getElementById('filter-status').value;
+            
+            const table = document.getElementById('results-table');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            let visibleCount = 0;
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                
+                const csid = cells[1].textContent.toLowerCase();
+                const co = cells[2].textContent.toLowerCase();
+                const ip = cells[3].textContent.toLowerCase();
+                const status = cells[4].textContent.trim();
+                
+                const matchesFilters = 
+                    csid.includes(csidFilter) &&
+                    co.includes(coFilter) &&
+                    ip.includes(ipFilter) &&
+                    (statusFilter === '' || status === statusFilter);
+                
+                if (matchesFilters) {
+                    row.style.display = '';
+                    visibleCount++;
+                    // Update row number
+                    cells[0].textContent = visibleCount;
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-csid').value = '';
+            document.getElementById('filter-co').value = '';
+            document.getElementById('filter-ip').value = '';
+            document.getElementById('filter-status').value = '';
+            
+            const table = document.getElementById('results-table');
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                row.style.display = '';
+                // Reset row numbers
+                const cells = row.getElementsByTagName('td');
+                cells[0].textContent = i + 1;
+            }
         }
 
         function exportResults() {

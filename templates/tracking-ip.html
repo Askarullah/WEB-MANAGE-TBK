@@ -457,13 +457,14 @@ SI-BK005865"></textarea>
                     <table class="table table-striped mb-0">
                         <thead>
                             <tr>
+                                <th><i class="fas fa-list-ol me-2"></i>No</th>
                                 <th><i class="fas fa-id-card me-2"></i>CSID</th>
                                 <th><i class="fas fa-network-wired me-2"></i>IP Address</th>
                             </tr>
                         </thead>
                         <tbody id="resultsBody">
                             <tr>
-                                <td colspan="2" class="text-center text-muted py-4">
+                                <td colspan="3" class="text-center text-muted py-4">
                                     <i class="fas fa-search fa-2x mb-2 d-block"></i>
                                     No results yet. Upload a file and search for a CSID.
                                 </td>
@@ -571,9 +572,10 @@ SI-BK005865"></textarea>
             // IMPROVED: Use document fragment for better performance
             const fragment = document.createDocumentFragment();
             
-            data.forEach(item => {
+            data.forEach((item, index) => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
+                    <td><strong>${index + 1}</strong></td>
                     <td><i class="fas fa-id-card me-2 text-primary"></i>${item.csid}</td>
                     <td><i class="fas fa-network-wired me-2 ${item.ip === 'Not Found' ? 'text-danger' : 'text-success'}"></i>${item.ip}</td>
                 `;
@@ -586,7 +588,7 @@ SI-BK005865"></textarea>
         } else {
             resultsBody.innerHTML = `
                 <tr>
-                    <td colspan="2" class="text-center text-muted py-4">
+                    <td colspan="3" class="text-center text-muted py-4">
                         <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
                         No results found for CSID: ${csid}
                     </td>
@@ -599,7 +601,7 @@ SI-BK005865"></textarea>
         console.error('Error:', error);
         resultsBody.innerHTML = `
             <tr>
-                <td colspan="2" class="text-center text-danger py-4">
+                <td colspan="3" class="text-center text-danger py-4">
                     <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
                     An error occurred while searching. Please try again.
                 </td>

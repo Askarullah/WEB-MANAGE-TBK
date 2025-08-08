@@ -412,10 +412,37 @@
                 <!-- Search Section -->
                 <div class="glass-card">
                     <h4 class="section-title"><i class="fas fa-search"></i>Search ODP</h4>
-                    <div class="input-group mb-3">
+                    
+                    <!-- Search Mode Toggle -->
+                    <div class="mb-3">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="searchMode" id="singleMode" value="single" checked>
+                            <label class="btn btn-outline-primary" for="singleMode">
+                                <i class="fas fa-search me-2"></i>Single Search
+                            </label>
+                            <input type="radio" class="btn-check" name="searchMode" id="batchMode" value="batch">
+                            <label class="btn btn-outline-primary" for="batchMode">
+                                <i class="fas fa-list me-2"></i>Batch Search
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Single Search Input -->
+                    <div id="singleSearchDiv" class="input-group mb-3">
                         <input type="text" id="odpInput" class="form-control" placeholder="Enter ODP ID (e.g. LBS 7)">
                         <button class="btn btn-primary" onclick="searchODP()">
                             <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
+                    
+                    <!-- Batch Search Input -->
+                    <div id="batchSearchDiv" class="d-none">
+                        <div class="mb-3">
+                            <label for="batchOdpInput" class="form-label"><i class="fas fa-list me-2"></i>Enter multiple ODP IDs (one per line):</label>
+                            <textarea id="batchOdpInput" class="form-control" rows="5" placeholder="LBS 7&#10;LBS 8&#10;LBS 9&#10;..."></textarea>
+                        </div>
+                        <button class="btn btn-primary" onclick="batchSearchODP()">
+                            <i class="fas fa-search me-2"></i>Batch Search
                         </button>
                     </div>
                     
@@ -437,13 +464,14 @@
                         <thead>
                             <tr>
                                 <th><i class="fas fa-list-ol me-2"></i>No</th>
+                                <th><i class="fas fa-sitemap me-2"></i>ODP ID</th>
                                 <th><i class="fas fa-network-wired me-2"></i>IP Address</th>
                                 <th><i class="fas fa-id-card me-2"></i>CSID</th>
                             </tr>
                         </thead>
                         <tbody id="resultsBody">
                             <tr>
-                                <td colspan="3" class="text-center text-muted py-4">
+                                <td colspan="4" class="text-center text-muted py-4">
                                     <i class="fas fa-search fa-2x mb-2 d-block"></i>
                                     No results yet. Upload a file and search for an ODP ID.
                                 </td>
@@ -514,7 +542,29 @@
             statusCard.querySelector('i').className = 'fas fa-check-circle text-success me-3';
         }
 
-        //FUNCTION YANG TRIGGER BUTTON SEARCH ODP
+        // Search mode toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const singleMode = document.getElementById('singleMode');
+            const batchMode = document.getElementById('batchMode');
+            const singleSearchDiv = document.getElementById('singleSearchDiv');
+            const batchSearchDiv = document.getElementById('batchSearchDiv');
+            
+            singleMode.addEventListener('change', function() {
+                if (this.checked) {
+                    singleSearchDiv.classList.remove('d-none');
+                    batchSearchDiv.classList.add('d-none');
+                }
+            });
+            
+            batchMode.addEventListener('change', function() {
+                if (this.checked) {
+                    singleSearchDiv.classList.add('d-none');
+                    batchSearchDiv.classList.remove('d-none');
+                }
+            });
+        });
+
+        //FUNCTION YANG TRIGGER BUTTON SEARCH ODP (SINGLE)
         function searchODP() {
             const fileInput = document.getElementById('excelFile');
             const odpId = document.getElementById('odpInput').value;
@@ -552,6 +602,7 @@
                         resultsBody.innerHTML += `
                             <tr>
                                 <td><strong>${index + 1}</strong></td>
+                                <td><i class="fas fa-sitemap me-2 text-info"></i>${odpId}</td>
                                 <td><i class="fas fa-network-wired me-2 text-primary"></i>${item.ip}</td>
                                 <td><i class="fas fa-id-card me-2 text-success"></i>${item.csid}</td>
                             </tr>
@@ -560,7 +611,7 @@
                 } else {
                     resultsBody.innerHTML = `
                         <tr>
-                            <td colspan="3" class="text-center text-muted py-4">
+                            <td colspan="4" class="text-center text-muted py-4">
                                 <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
                                 No results found for ODP ID: ${odpId}
                             </td>
@@ -573,7 +624,99 @@
                 console.error('Error:', error);
                 resultsBody.innerHTML = `
                     <tr>
-                        <td colspan="3" class="text-center text-danger py-4">
+                        <td colspan="4" class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                            An error occurred while searching. Please try again.
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        
+        //FUNCTION YANG TRIGGER BUTTON BATCH SEARCH ODP
+        function batchSearchODP() {
+            const fileInput = document.getElementById('excelFile');
+            const batchOdpInput = document.getElementById('batchOdpInput').value;
+            const searchProgress = document.getElementById('searchProgress');
+            const resultsBody = document.getElementById('resultsBody');
+            
+            if (!fileLoaded) {
+                alert('Please upload an Excel file first');
+                return;
+            }
+            
+            if (!batchOdpInput.trim()) {
+                alert('Please enter at least one ODP ID');
+                return;
+            }
+            
+            // Parse ODP IDs from textarea (split by newlines and filter empty lines)
+            const odpIds = batchOdpInput.split('\n')
+                .map(id => id.trim())
+                .filter(id => id.length > 0);
+            
+            if (odpIds.length === 0) {
+                alert('Please enter valid ODP IDs');
+                return;
+            }
+            
+            // Show progress indicator
+            searchProgress.classList.remove('d-none');
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('batch_odp_ids', JSON.stringify(odpIds));
+
+            fetch('/batch-search-odp', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                searchProgress.classList.add('d-none');
+                resultsBody.innerHTML = '';
+                
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach((item, index) => {
+                        resultsBody.innerHTML += `
+                            <tr>
+                                <td><strong>${index + 1}</strong></td>
+                                <td><i class="fas fa-sitemap me-2 text-info"></i>${item.odp_id}</td>
+                                <td><i class="fas fa-network-wired me-2 text-primary"></i>${item.ip}</td>
+                                <td><i class="fas fa-id-card me-2 text-success"></i>${item.csid}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    // Show summary
+                    if (data.summary) {
+                        resultsBody.innerHTML += `
+                            <tr class="table-info">
+                                <td colspan="4" class="text-center py-3">
+                                    <strong><i class="fas fa-info-circle me-2"></i>Summary:</strong>
+                                    Found ${data.summary.found} results out of ${data.summary.total} searched ODP IDs
+                                    ${data.summary.not_found > 0 ? `(${data.summary.not_found} not found)` : ''}
+                                </td>
+                            </tr>
+                        `;
+                    }
+                } else {
+                    resultsBody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
+                                No results found for any of the provided ODP IDs
+                            </td>
+                        </tr>
+                    `;
+                }
+            })
+            .catch(error => {
+                searchProgress.classList.add('d-none');
+                console.error('Error:', error);
+                resultsBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center text-danger py-4">
                             <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
                             An error occurred while searching. Please try again.
                         </td>

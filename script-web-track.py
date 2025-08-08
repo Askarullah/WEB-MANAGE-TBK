@@ -548,6 +548,63 @@ def search_odp():
     
     return jsonify(results)
 
+@app.route('/batch-search-odp', methods=['POST'])
+def batch_search_odp():
+    """Batch search for multiple ODP IDs"""
+    try:
+        batch_odp_ids_json = request.form.get('batch_odp_ids')
+        file = request.files['file']
+        
+        if not batch_odp_ids_json or not file:
+            return jsonify({'error': 'Missing required data'}), 400
+        
+        # Parse the JSON string to get the list of ODP IDs
+        batch_odp_ids = json.loads(batch_odp_ids_json)
+        
+        if not isinstance(batch_odp_ids, list) or len(batch_odp_ids) == 0:
+            return jsonify({'error': 'Invalid ODP IDs format'}), 400
+        
+        wb = openpyxl.load_workbook(file)
+        all_results = []
+        found_odp_ids = set()
+        
+        # Search for each ODP ID
+        for odp_id in batch_odp_ids:
+            odp_id = str(odp_id).strip()
+            if not odp_id:
+                continue
+                
+            # Search in all sheets except "TRACK ODP"
+            for sheet_name in wb.sheetnames:
+                if sheet_name == "TRACK ODP":
+                    continue
+                ws = wb[sheet_name]
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    if row[1] and str(row[1]).strip() == odp_id:
+                        all_results.append({
+                            'odp_id': odp_id,
+                            'ip': row[2] if row[2] else 'N/A',
+                            'csid': row[3] if row[3] else 'N/A'
+                        })
+                        found_odp_ids.add(odp_id)
+        
+        # Create summary
+        summary = {
+            'total': len(batch_odp_ids),
+            'found': len(found_odp_ids),
+            'not_found': len(batch_odp_ids) - len(found_odp_ids)
+        }
+        
+        return jsonify({
+            'results': all_results,
+            'summary': summary
+        })
+        
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Invalid JSON format for ODP IDs'}), 400
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
 @app.route('/search-ip', methods=['POST'])
 def search_ip():
     csid_input = request.form.get('csid')
@@ -1189,4 +1246,4 @@ if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
         threading.Thread(target=open_browser, daemon=True).start()
     
-    app.run(debug=False, host='192.168.10.2', port=5050)
+    app.run(debug=False, host='localhost', port=5050)

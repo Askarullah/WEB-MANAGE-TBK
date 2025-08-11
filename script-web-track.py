@@ -1246,4 +1246,4 @@ if __name__ == '__main__':
     if getattr(sys, 'frozen', False):
         threading.Thread(target=open_browser, daemon=True).start()
     
-    app.run(debug=False, host='localhost', port=5050)
+    app.run(debug=False, host='192.168.10.2', port=5050)

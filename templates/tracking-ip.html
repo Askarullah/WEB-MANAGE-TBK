@@ -245,6 +245,29 @@
         border: none;
         padding: 15px;
         font-weight: 600;
+        cursor: pointer;
+        user-select: none;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .table thead th:hover {
+        background: linear-gradient(135deg, 
+          rgba(69, 160, 73, 0.9) 0%, 
+          rgba(56, 142, 60, 0.9) 50%,
+          rgba(46, 125, 50, 0.9) 100%);
+        transform: translateY(-1px);
+      }
+
+      .sort-icon {
+        margin-left: 8px;
+        opacity: 0.6;
+        transition: all 0.3s ease;
+      }
+
+      .sort-icon.active {
+        opacity: 1;
+        transform: scale(1.1);
       }
 
       .table tbody td {
@@ -559,9 +582,17 @@ SI-BK005865"></textarea>
                     <table class="table table-striped mb-0">
                         <thead>
                             <tr>
-                                <th><i class="fas fa-list-ol me-2"></i>No</th>
-                                <th><i class="fas fa-id-card me-2"></i>CSID</th>
-                                <th><i class="fas fa-network-wired me-2"></i>IP Address</th>
+                                <th>
+                                    <i class="fas fa-list-ol me-2"></i>No
+                                </th>
+                                <th onclick="sortTable(1)" title="Click to sort by CSID">
+                                    <i class="fas fa-id-card me-2"></i>CSID
+                                    <i class="fas fa-sort sort-icon" id="sort-1"></i>
+                                </th>
+                                <th onclick="sortTable(2)" title="Click to sort by IP Address">
+                                    <i class="fas fa-network-wired me-2"></i>IP Address
+                                    <i class="fas fa-sort sort-icon" id="sort-2"></i>
+                                </th>
                             </tr>
                         </thead>
                         <tbody id="resultsBody">
@@ -586,6 +617,8 @@ SI-BK005865"></textarea>
     
     <script>
         let fileLoaded = false;
+        let currentSort = { column: -1, direction: 'asc' };
+        let tableData = [];
 
         // Drag and drop handlers
         function handleDragOver(e) {
@@ -692,18 +725,13 @@ SI-BK005865"></textarea>
             // IMPROVED: Use document fragment for better performance
             const fragment = document.createDocumentFragment();
             
-            data.forEach((item, index) => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${index + 1}</strong></td>
-                    <td><i class="fas fa-id-card me-2 text-primary"></i>${item.csid}</td>
-                    <td><i class="fas fa-network-wired me-2 ${item.ip === 'Not Found' ? 'text-danger' : 'text-success'}"></i>${item.ip}</td>
-                `;
-                fragment.appendChild(tr);
-            });
+            // Store data for sorting
+            tableData = data.map((item, index) => ({
+                ...item,
+                originalIndex: index + 1
+            }));
             
-            // Add all rows at once instead of one by one
-            resultsBody.appendChild(fragment);
+            renderTable();
             
         } else {
             resultsBody.innerHTML = `
@@ -729,6 +757,92 @@ SI-BK005865"></textarea>
         `;
     });
 }
+
+        // Function to render table with current data
+        function renderTable() {
+            const resultsBody = document.getElementById('resultsBody');
+            const fragment = document.createDocumentFragment();
+            
+            tableData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${item.originalIndex}</strong></td>
+                    <td><i class="fas fa-id-card me-2 text-primary"></i>${item.csid}</td>
+                    <td><i class="fas fa-network-wired me-2 ${item.ip === 'Not Found' ? 'text-danger' : 'text-success'}"></i>${item.ip}</td>
+                `;
+                fragment.appendChild(tr);
+            });
+            
+            resultsBody.innerHTML = '';
+            resultsBody.appendChild(fragment);
+        }
+
+        // Function to sort table
+        function sortTable(columnIndex) {
+            if (tableData.length === 0) return;
+            
+            // Don't allow sorting on the number column (column 0)
+            if (columnIndex === 0) {
+                return;
+            }
+            
+            // Reset all sort icons
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.className = 'fas fa-sort sort-icon';
+            });
+            
+            // Determine sort direction
+            if (currentSort.column === columnIndex) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.direction = 'asc';
+            }
+            currentSort.column = columnIndex;
+            
+            // Update sort icon
+            const sortIcon = document.getElementById(`sort-${columnIndex}`);
+            sortIcon.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} sort-icon active`;
+            
+            // Sort the data
+            tableData.sort((a, b) => {
+                let valueA, valueB;
+                
+                switch(columnIndex) {
+                    case 1: // CSID column
+                        valueA = a.csid.toLowerCase();
+                        valueB = b.csid.toLowerCase();
+                        break;
+                    case 2: // IP Address column
+                        valueA = a.ip;
+                        valueB = b.ip;
+                        // Handle "Not Found" specially - put at end
+                        if (valueA === 'Not Found' && valueB !== 'Not Found') return 1;
+                        if (valueB === 'Not Found' && valueA !== 'Not Found') return -1;
+                        // If both are valid IPs, use proper IP sorting
+                        if (valueA !== 'Not Found' && valueB !== 'Not Found') {
+                            const ipA = valueA.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
+                            const ipB = valueB.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
+                            valueA = ipA;
+                            valueB = ipB;
+                        } else {
+                            valueA = valueA.toLowerCase();
+                            valueB = valueB.toLowerCase();
+                        }
+                        break;
+                }
+                
+                if (typeof valueA === 'number') {
+                    return currentSort.direction === 'asc' ? valueA - valueB : valueB - valueA;
+                } else {
+                    if (valueA < valueB) return currentSort.direction === 'asc' ? -1 : 1;
+                    if (valueA > valueB) return currentSort.direction === 'asc' ? 1 : -1;
+                    return 0;
+                }
+            });
+            
+            // Re-render the table
+            renderTable();
+        }
 
         // Allow Enter key to trigger search
         document.getElementById('csidInput').addEventListener('keypress', function(e) {

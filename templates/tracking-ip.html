@@ -377,6 +377,53 @@
         font-size: 1.15rem;
       }
 
+      /* Summary Statistics Styling */
+      .summary-stat {
+        background: rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        padding: 25px;
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        height: 100%;
+      }
+
+      .summary-stat:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+      }
+
+      .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      }
+
+      .stat-content h3 {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin: 10px 0 5px;
+        color: #2c3e50;
+      }
+
+      .stat-content p {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #7f8c8d;
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
       /* Responsive adjustments */
       @media (max-width: 768px) {
         .home-button {
@@ -463,6 +510,46 @@ SI-BK005865"></textarea>
                         <div class="text-center">
                             <i class="fas fa-spinner fa-spin me-2"></i>
                             <span class="text-primary fw-bold">Searching...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Summary Section -->
+                <div class="glass-card d-none" id="summarySection">
+                    <h4 class="section-title"><i class="fas fa-chart-bar"></i>Search Summary</h4>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="summary-stat">
+                                <div class="stat-icon bg-primary">
+                                    <i class="fas fa-list"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h3 id="totalInput">0</h3>
+                                    <p>Total Input CSID</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="summary-stat">
+                                <div class="stat-icon bg-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h3 id="totalFound">0</h3>
+                                    <p>Found CSID</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="summary-stat">
+                                <div class="stat-icon bg-danger">
+                                    <i class="fas fa-times-circle"></i>
+                                </div>
+                                <div class="stat-content">
+                                    <h3 id="totalNotFound">0</h3>
+                                    <p>Not Found CSID</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -556,6 +643,7 @@ SI-BK005865"></textarea>
     const csid = document.getElementById('csidInput').value;
     const searchProgress = document.getElementById('searchProgress');
     const resultsBody = document.getElementById('resultsBody');
+    const summarySection = document.getElementById('summarySection');
     
     if (!fileLoaded) {
         alert('Please upload an Excel file first');
@@ -566,6 +654,9 @@ SI-BK005865"></textarea>
         alert('Please enter at least one CSID');
         return;
     }
+    
+    // Hide summary section during search
+    summarySection.classList.add('d-none');
     
     // Show progress indicator
     searchProgress.classList.remove('d-none');
@@ -584,6 +675,20 @@ SI-BK005865"></textarea>
         resultsBody.innerHTML = '';
         
         if (data.length > 0) {
+            // Calculate summary statistics
+            const inputCSIDs = csid.trim().split('\n').filter(line => line.trim() !== '');
+            const totalInput = inputCSIDs.length;
+            const foundCount = data.filter(item => item.ip !== 'Not Found').length;
+            const notFoundCount = data.filter(item => item.ip === 'Not Found').length;
+            
+            // Update summary display
+            document.getElementById('totalInput').textContent = totalInput;
+            document.getElementById('totalFound').textContent = foundCount;
+            document.getElementById('totalNotFound').textContent = notFoundCount;
+            
+            // Show summary section
+            summarySection.classList.remove('d-none');
+            
             // IMPROVED: Use document fragment for better performance
             const fragment = document.createDocumentFragment();
             

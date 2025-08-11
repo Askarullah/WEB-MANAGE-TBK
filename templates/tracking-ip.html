@@ -343,23 +343,38 @@
       }
 
       .signature {
-        background: rgba(120, 119, 198, 0.1);
-        border-top: 1px solid rgba(120, 119, 198, 0.2);
+        background: rgba(44, 62, 80, 0.95);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 0 0 32px 32px;
-        padding: 15px;
+        padding: 30px;
         text-align: center;
-        color: #666;
-        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.95);
+        font-size: 1.1rem;
+        font-weight: 600;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
       }
       
       .signature i {
-        color: #7877C6;
-        margin-right: 5px;
+        color: #4CAF50;
+        margin-right: 12px;
+        font-size: 1.3rem;
+        animation: pulse 2s infinite;
+        text-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
+      }
+      
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.1); }
       }
       
       .signature .developer-name {
-        font-weight: 600;
+        font-weight: 800;
         color: #4CAF50;
+        text-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        letter-spacing: 0.5px;
+        font-size: 1.15rem;
       }
 
       /* Responsive adjustments */
@@ -473,10 +488,10 @@ SI-BK005865"></textarea>
                     </table>
                 </div>
             </div>
-            <!-- Signature -->
-            <div class="signature">
-                <i class="fas fa-code"></i> by <span class="developer-name">Holil Askarullah</span>
-            </div>
+            <!-- Premium Signature -->
+        <div class="signature">
+          <i class="fas fa-code"></i> Crafted by <span class="developer-name">Holil Askarullah</span>
+        </div>
         </div>
     </div>
 

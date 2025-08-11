@@ -587,6 +587,78 @@
         .clear-filters-btn:hover {
             background: #4b5563;
         }
+
+        /* Sortable table styles */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .sortable-header:hover {
+            background: #e5e7eb;
+        }
+
+        .sort-icon {
+            display: inline-block;
+            margin-left: 8px;
+            font-size: 12px;
+            opacity: 0.5;
+            transition: all 0.3s ease;
+        }
+
+        .sortable-header.sort-asc .sort-icon::after {
+            content: '▲';
+            opacity: 1;
+            color: #4f46e5;
+        }
+
+        .sortable-header.sort-desc .sort-icon::after {
+            content: '▼';
+            opacity: 1;
+            color: #4f46e5;
+        }
+
+        .sortable-header:not(.sort-asc):not(.sort-desc) .sort-icon::after {
+            content: '⇅';
+        }
+
+        /* Premium signature */
+        .signature {
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0 0 32px 32px;
+            padding: 30px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.1rem;
+            font-weight: 600;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .signature i {
+            color: #4CAF50;
+            margin-right: 12px;
+            font-size: 1.3rem;
+            animation: pulse 2s infinite;
+            text-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        .developer-name {
+            font-weight: 800;
+            color: #4CAF50;
+            text-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            letter-spacing: 0.5px;
+            font-size: 1.15rem;
+        }
     </style>
 </head>
 <body>
@@ -1017,11 +1089,21 @@
                     <thead>
                         <tr>
                             <th>No</th>
-                            <th>CSID</th>
-                            <th>CO</th>
-                            <th>Device IP</th>
-                            <th>Status</th>
-                            <th>Notes</th>
+                            <th class="sortable-header" onclick="sortTable(1, 'text')" data-column="1">
+                                CSID <span class="sort-icon"></span>
+                            </th>
+                            <th class="sortable-header" onclick="sortTable(2, 'text')" data-column="2">
+                                CO <span class="sort-icon"></span>
+                            </th>
+                            <th class="sortable-header" onclick="sortTable(3, 'text')" data-column="3">
+                                Device IP <span class="sort-icon"></span>
+                            </th>
+                            <th class="sortable-header" onclick="sortTable(4, 'text')" data-column="4">
+                                Status <span class="sort-icon"></span>
+                            </th>
+                            <th class="sortable-header" onclick="sortTable(5, 'text')" data-column="5">
+                                Notes <span class="sort-icon"></span>
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1087,6 +1169,13 @@
                     row.style.display = 'none';
                 }
             }
+            
+            // Update filter count display
+            const totalRows = rows.length;
+            const filteredRows = visibleCount;
+            if (filteredRows < totalRows) {
+                showAlert(`Showing ${filteredRows} of ${totalRows} results`, 'success');
+            }
         }
 
         function clearFilters() {
@@ -1098,6 +1187,14 @@
             const table = document.getElementById('results-table');
             const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
             
+            // Reset sorting state
+            currentSortColumn = -1;
+            currentSortDirection = 'asc';
+            const headers = table.querySelectorAll('.sortable-header');
+            headers.forEach(header => {
+                header.classList.remove('sort-asc', 'sort-desc');
+            });
+            
             for (let i = 0; i < rows.length; i++) {
                 const row = rows[i];
                 row.style.display = '';
@@ -1105,6 +1202,8 @@
                 const cells = row.getElementsByTagName('td');
                 cells[0].textContent = i + 1;
             }
+            
+            showAlert('Filters and sorting cleared', 'success');
         }
 
         function exportResults() {
@@ -1308,6 +1407,82 @@
                 userInfo.classList.add('hidden');
             }
         }
+
+        // Table sorting functionality
+        let currentSortColumn = -1;
+        let currentSortDirection = 'asc';
+
+        function sortTable(columnIndex, dataType) {
+            const table = document.getElementById('results-table');
+            const tbody = table.getElementsByTagName('tbody')[0];
+            const rows = Array.from(tbody.getElementsByTagName('tr'));
+            
+            // Determine sort direction
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortDirection = 'asc';
+                currentSortColumn = columnIndex;
+            }
+            
+            // Remove sort classes from all headers
+            const headers = table.querySelectorAll('.sortable-header');
+            headers.forEach(header => {
+                header.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Add sort class to current header
+            const currentHeader = table.querySelector(`[data-column="${columnIndex}"]`);
+            currentHeader.classList.add(currentSortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aValue = a.getElementsByTagName('td')[columnIndex].textContent.trim();
+                let bValue = b.getElementsByTagName('td')[columnIndex].textContent.trim();
+                
+                // Handle status column specially to sort by priority
+                if (columnIndex === 4) {
+                    const statusPriority = {
+                        'ACTIVE': 1,
+                        'SUSPENDED': 2,
+                        'DISABLED': 3,
+                        'NOT_FOUND': 4
+                    };
+                    aValue = statusPriority[aValue] || 999;
+                    bValue = statusPriority[bValue] || 999;
+                }
+                
+                // Handle IP addresses specially
+                if (columnIndex === 3 && aValue.match(/^\d+\.\d+\.\d+\.\d+$/)) {
+                    const aIP = aValue.split('.').map(num => parseInt(num).toString().padStart(3, '0')).join('.');
+                    const bIP = bValue.split('.').map(num => parseInt(num).toString().padStart(3, '0')).join('.');
+                    aValue = aIP;
+                    bValue = bIP;
+                }
+                
+                // Compare values
+                let comparison = 0;
+                if (typeof aValue === 'string' && typeof bValue === 'string') {
+                    comparison = aValue.localeCompare(bValue);
+                } else {
+                    comparison = aValue - bValue;
+                }
+                
+                return currentSortDirection === 'asc' ? comparison : -comparison;
+            });
+            
+            // Re-append sorted rows and update row numbers
+            rows.forEach((row, index) => {
+                tbody.appendChild(row);
+                // Update row number
+                row.getElementsByTagName('td')[0].textContent = index + 1;
+            });
+        }
     </script>
+    
+    <!-- Premium Signature -->
+    <div class="signature">
+        <i class="fas fa-code"></i> Crafted by <span class="developer-name">Holil Askarullah</span>
+    </div>
 </body>
 </html>

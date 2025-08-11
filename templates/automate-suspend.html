@@ -295,6 +295,38 @@
             font-weight: 500;
         }
 
+        /* Sortable table styles */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+
+        .sortable-header:hover {
+            background: #e2e8f0 !important;
+        }
+
+        .sort-icon {
+            margin-left: 8px;
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+
+        .sortable-header.asc .sort-icon::before {
+            content: '▲';
+            opacity: 1;
+        }
+
+        .sortable-header.desc .sort-icon::before {
+            content: '▼';
+            opacity: 1;
+        }
+
+        .sortable-header:not(.asc):not(.desc) .sort-icon::before {
+            content: '⇅';
+        }
+
         .error {
             background: #fee2e2;
             color: #991b1b;
@@ -602,6 +634,42 @@
             font-size: 0.7em;
             color: #9ca3af;
             margin-top: 5px;
+        }
+
+        /* Premium signature */
+        .signature {
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0 0 32px 32px;
+            padding: 30px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.1rem;
+            font-weight: 600;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .signature i {
+            color: #4CAF50;
+            margin-right: 12px;
+            font-size: 1.3rem;
+            animation: pulse 2s infinite;
+            text-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+
+        .developer-name {
+            font-weight: 800;
+            color: #4CAF50;
+            text-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            letter-spacing: 0.5px;
+            font-size: 1.15rem;
         }
     </style>
 </head>
@@ -1170,12 +1238,24 @@
             thead.innerHTML = `
                 <tr>
                     <th>No.</th>
-                    <th>Device Name</th>
-                    <th>Device IP</th>
-                    <th>CSID</th>
-                    <th>IP Address</th>
-                    <th>Date Added</th>
-                    <th>Location</th>
+                    <th class="sortable-header" onclick="sortTable(1, 'text')" data-column="1">
+                        Device Name <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable-header" onclick="sortTable(2, 'ip')" data-column="2">
+                        Device IP <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable-header" onclick="sortTable(3, 'text')" data-column="3">
+                        CSID <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable-header" onclick="sortTable(4, 'ip')" data-column="4">
+                        IP Address <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable-header" onclick="sortTable(5, 'date')" data-column="5">
+                        Date Added <span class="sort-icon"></span>
+                    </th>
+                    <th class="sortable-header" onclick="sortTable(6, 'text')" data-column="6">
+                        Location <span class="sort-icon"></span>
+                    </th>
                 </tr>
                 <tr class="filter-row">
                     <th></th>
@@ -1228,6 +1308,92 @@
             }
         }
 
+        // Sorting variables
+        let currentSortColumn = -1;
+        let currentSortDirection = 'asc';
+
+        function sortTable(columnIndex, dataType) {
+            // Determine sort direction
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortDirection = 'asc';
+                currentSortColumn = columnIndex;
+            }
+
+            // Update header classes
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.classList.remove('asc', 'desc');
+            });
+            
+            const currentHeader = document.querySelector(`[data-column="${columnIndex}"]`);
+            if (currentHeader) {
+                currentHeader.classList.add(currentSortDirection);
+            }
+
+            // Sort the filtered results
+            filteredResults.sort((a, b) => {
+                let valueA, valueB;
+                
+                switch (columnIndex) {
+                    case 1: // Device Name
+                        valueA = a.deviceName;
+                        valueB = b.deviceName;
+                        break;
+                    case 2: // Device IP
+                        valueA = a.deviceIP;
+                        valueB = b.deviceIP;
+                        break;
+                    case 3: // CSID
+                        valueA = a.csid;
+                        valueB = b.csid;
+                        break;
+                    case 4: // IP Address
+                        valueA = a.ip;
+                        valueB = b.ip;
+                        break;
+                    case 5: // Date Added
+                        valueA = a.date;
+                        valueB = b.date;
+                        break;
+                    case 6: // Location
+                        valueA = a.deviceLocation;
+                        valueB = b.deviceLocation;
+                        break;
+                    default:
+                        return 0;
+                }
+
+                // Handle different data types
+                if (dataType === 'ip') {
+                    // IP address sorting
+                    const ipA = valueA.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
+                    const ipB = valueB.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
+                    valueA = ipA;
+                    valueB = ipB;
+                } else if (dataType === 'date') {
+                    // Date sorting
+                    valueA = new Date(valueA);
+                    valueB = new Date(valueB);
+                } else {
+                    // Text sorting (case insensitive)
+                    valueA = valueA.toString().toLowerCase();
+                    valueB = valueB.toString().toLowerCase();
+                }
+
+                if (valueA < valueB) {
+                    return currentSortDirection === 'asc' ? -1 : 1;
+                }
+                if (valueA > valueB) {
+                    return currentSortDirection === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+
+            // Re-render the table
+            renderTableRows();
+        }
+
         function filterTable() {
             const filters = document.querySelectorAll('.column-filter');
             const filterValues = {};
@@ -1276,6 +1442,43 @@
                 return true;
             });
             
+            // Re-apply current sorting if any
+            if (currentSortColumn !== -1) {
+                const currentHeader = document.querySelector(`[data-column="${currentSortColumn}"]`);
+                if (currentHeader) {
+                    const dataType = currentHeader.onclick.toString().includes("'ip'") ? 'ip' : 
+                                   currentHeader.onclick.toString().includes("'date'") ? 'date' : 'text';
+                    
+                    filteredResults.sort((a, b) => {
+                        let valueA, valueB;
+                        
+                        switch (currentSortColumn) {
+                            case 1: valueA = a.deviceName; valueB = b.deviceName; break;
+                            case 2: valueA = a.deviceIP; valueB = b.deviceIP; break;
+                            case 3: valueA = a.csid; valueB = b.csid; break;
+                            case 4: valueA = a.ip; valueB = b.ip; break;
+                            case 5: valueA = a.date; valueB = b.date; break;
+                            case 6: valueA = a.deviceLocation; valueB = b.deviceLocation; break;
+                            default: return 0;
+                        }
+
+                        if (dataType === 'ip') {
+                            const ipA = valueA.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
+                            const ipB = valueB.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
+                            valueA = ipA; valueB = ipB;
+                        } else if (dataType === 'date') {
+                            valueA = new Date(valueA); valueB = new Date(valueB);
+                        } else {
+                            valueA = valueA.toString().toLowerCase(); valueB = valueB.toString().toLowerCase();
+                        }
+
+                        if (valueA < valueB) return currentSortDirection === 'asc' ? -1 : 1;
+                        if (valueA > valueB) return currentSortDirection === 'asc' ? 1 : -1;
+                        return 0;
+                    });
+                }
+            }
+            
             renderTableRows();
         }
 
@@ -1285,9 +1488,20 @@
                 filter.value = '';
             });
             
+            // Reset sorting state
+            currentSortColumn = -1;
+            currentSortDirection = 'asc';
+            
+            // Remove sort classes from headers
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.classList.remove('asc', 'desc');
+            });
+            
             // Reset filtered results
             filteredResults = [...combinedResults];
             renderTableRows();
+            
+            showMessage('Filters and sorting cleared successfully!', 'success');
         }
 
         function exportFilteredResults() {
@@ -1481,5 +1695,10 @@
             }
         }
     </script>
+    
+    <!-- Premium Signature -->
+    <div class="signature">
+        <i class="fas fa-code"></i> Crafted by <span class="developer-name">Holil Askarullah</span>
+    </div>
 </body>
 </html>

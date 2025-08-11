@@ -442,6 +442,19 @@
                         </div>
                     </div>
                     
+                    <!-- Management Buttons -->
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button class="btn btn-custom btn-outline-secondary" id="clearInputBtn" onclick="clearInput()">
+                            <i class="fas fa-eraser me-2"></i>Clear Input
+                        </button>
+                        <button class="btn btn-custom btn-outline-warning" id="clearResultsBtn" onclick="clearResults()">
+                            <i class="fas fa-broom me-2"></i>Clear Results
+                        </button>
+                        <button class="btn btn-custom btn-outline-danger" id="clearFileBtn" onclick="clearFile()">
+                            <i class="fas fa-file-times me-2"></i>Clear File
+                        </button>
+                    </div>
+                    
                     <!-- Single Search Input -->
                     <div id="singleSearchDiv" class="input-group mb-3">
                         <input type="text" id="odpInput" class="form-control" placeholder="Enter ODP ID (e.g. LBS 7)">
@@ -738,6 +751,44 @@
                     </tr>
                 `;
             });
+        }
+
+        // Clear input function
+        function clearInput() {
+            document.getElementById('odpInput').value = '';
+            document.getElementById('batchOdpInput').value = '';
+        }
+
+        // Clear results function
+        function clearResults() {
+            const resultsBody = document.getElementById('resultsBody');
+            const summarySection = document.getElementById('summarySection');
+            
+            resultsBody.innerHTML = `
+                <tr>
+                    <td colspan="3" class="text-center text-muted py-4">
+                        <i class="fas fa-search fa-2x mb-2 d-block"></i>
+                        No results yet. Upload a file and search for an ODP ID.
+                    </td>
+                </tr>
+            `;
+            
+            summarySection.classList.add('d-none');
+            tableData = [];
+            currentSort = { column: -1, direction: 'asc' };
+        }
+
+        // Clear file function
+        function clearFile() {
+            const fileInput = document.getElementById('fileInput');
+            const fileStatus = document.getElementById('fileStatus');
+            const dropZone = document.querySelector('.drop-zone');
+            
+            fileInput.value = '';
+            uploadedFile = null;
+            fileStatus.innerHTML = '<i class="fas fa-info-circle me-2"></i>No file selected';
+            fileStatus.className = 'file-status text-muted';
+            dropZone.classList.remove('drag-over');
         }
 
         // Allow Enter key to trigger search

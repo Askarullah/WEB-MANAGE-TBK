@@ -474,9 +474,9 @@ def upload_file():
         with pd.ExcelFile(file) as xls:
             for sheet_name in xls.sheet_names:
                 df = pd.read_excel(xls, sheet_name=sheet_name)
-                if len(df.columns) >= 4:  # Check if column D exists
-                    column_d = df.iloc[:, 3].astype(str).dropna()  # Column D (index 3)
-                    workbook_data[sheet_name] = column_d.tolist()
+                if len(df.columns) >= 3:  # Check if column C exists
+                    column_c = df.iloc[:, 2].astype(str).dropna()  # Column C (index 2)
+                    workbook_data[sheet_name] = column_c.tolist()
                 else:
                     workbook_data[sheet_name] = []
         
@@ -540,10 +540,10 @@ def search_odp():
             continue
         ws = wb[sheet_name]
         for row in ws.iter_rows(min_row=2, values_only=True):
-            if row[1] and str(row[1]).strip() == odp_id.strip():
+            if row[0] and str(row[0]).strip() == odp_id.strip():
                 results.append({
-                    'ip': row[2],
-                    'csid': row[3]
+                    'ip': row[1],
+                    'csid': row[2]
                 })
     
     return jsonify(results)
@@ -580,11 +580,11 @@ def batch_search_odp():
                     continue
                 ws = wb[sheet_name]
                 for row in ws.iter_rows(min_row=2, values_only=True):
-                    if row[1] and str(row[1]).strip() == odp_id:
+                    if row[0] and str(row[0]).strip() == odp_id:
                         all_results.append({
                             'odp_id': odp_id,
-                            'ip': row[2] if row[2] else 'N/A',
-                            'csid': row[3] if row[3] else 'N/A'
+                            'ip': row[1] if row[1] else 'N/A',
+                            'csid': row[2] if row[2] else 'N/A'
                         })
                         found_odp_ids.add(odp_id)
         
@@ -631,11 +631,11 @@ def search_ip():
             continue
         ws = wb[sheet_name]
         for row in ws.iter_rows(min_row=2, values_only=True):
-            if row[3]:  # Check if CSID column has value
-                row_csid = str(row[3]).strip()
+            if len(row) > 2 and row[2]:  # Check if CSID column has value
+                row_csid = str(row[2]).strip()
                 if row_csid:  # Only add non-empty CSIDs
                     ip_map[row_csid] = {
-                        'ip': row[2] if row[2] else 'N/A',
+                        'ip': row[1] if len(row) > 1 and row[1] else 'N/A',
                         'sheet': sheet_name
                     }
     

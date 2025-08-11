@@ -525,6 +525,16 @@ SI-BK005865"></textarea>
                         </button>
                     </div>
                     
+                    <!-- Management Buttons -->
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <button class="btn btn-custom btn-outline-secondary" id="clearInputBtn" onclick="clearInput()">
+                            <i class="fas fa-eraser me-2"></i>Clear Input
+                        </button>
+                        <button class="btn btn-custom btn-outline-warning" id="clearResultsBtn" onclick="clearResults()">
+                            <i class="fas fa-broom me-2"></i>Clear Results
+                        </button>
+                    </div>
+                    
                     <!-- Progress Bar -->
                     <div id="searchProgress" class="mt-2 mb-3 d-none">
                         <div class="progress mb-2">
@@ -842,6 +852,17 @@ SI-BK005865"></textarea>
             
             // Re-render the table
             renderTable();
+        }
+
+        // Clear input function
+        function clearInput() {
+            document.getElementById('csidInput').value = '';
+        }
+
+        // Clear results function
+        function clearResults() {
+            document.getElementById('resultsSection').classList.add('d-none');
+            document.getElementById('resultsTable').innerHTML = '';
         }
 
         // Allow Enter key to trigger search

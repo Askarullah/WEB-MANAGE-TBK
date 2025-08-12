@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MikroTik Queue Parser</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #E8E6F0;
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(120, 119, 198, 0.2) 0%, transparent 50%);
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 32px;
+            box-shadow: 
+                0 32px 64px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            margin: 40px auto;
+            max-width: 1200px;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .container {
+            padding: 0;
+        }
+        
+        /* Glassmorphism header */
+        .header {
+            background: linear-gradient(135deg, 
+                rgba(76, 175, 80, 0.9) 0%, 
+                rgba(69, 160, 73, 0.9) 50%,
+                rgba(56, 142, 60, 0.9) 100%);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.1), 
+                transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.02em;
+            color: white;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            font-weight: 500;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin: 0;
+        }
+
+        /* Stylish Home Button */
+        .home-button {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .home-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .home-button i {
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .home-button:hover i {
+            transform: scale(1.1);
+        }
+        
+        .content-section {
+            padding: 50px 40px;
+        }
+
+        /* Glass card components */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            color: #4CAF50;
+        }
+        
+        .input-section {
+            margin-bottom: 0;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: #2c3e50;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background: linear-gradient(45deg, #45a049, #388e3c);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #2c3e50;
+            padding: 20px 25px;
+            border-radius: 20px;
+            text-align: center;
+            flex: 1;
+            min-width: 150px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-number {
+            font-size: 2.2em;
+            font-weight: 800;
+            display: block;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table-container {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 
+                0 20px 40px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            margin-top: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+        }
+        
+        th {
+            background: linear-gradient(135deg, 
+                rgba(76, 175, 80, 0.9) 0%, 
+                rgba(69, 160, 73, 0.9) 50%,
+                rgba(56, 142, 60, 0.9) 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border: none;
+        }
+        
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+        
+        .sortable:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .sortable:after {
+            content: ' ↕️';
+            font-size: 12px;
+            margin-left: 8px;
+            opacity: 0.7;
+        }
+        
+        .sortable.asc:after {
+            content: ' ⬆️';
+        }
+        
+        .sortable.desc:after {
+            content: ' ⬇️';
+        }
+        
+        td {
+            padding: 12px 15px;
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            font-family: 'Courier New', monospace;
+        }
+        
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transition: background-color 0.2s ease;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 10px 0;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: #2c3e50;
+        }
+        
+        .search-box:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .signature {
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0 0 32px 32px;
+            padding: 30px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.1rem;
+            font-weight: 600;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        
+        .signature i {
+            color: #4CAF50;
+            margin-right: 12px;
+            font-size: 1.3rem;
+            animation: pulse 2s infinite;
+            text-shadow: 0 2px 8px rgba(76, 175, 80, 0.5);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
+        }
+        
+        .signature .developer-name {
+            font-weight: 800;
+            color: #4CAF50;
+            text-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+            letter-spacing: 0.5px;
+            font-size: 1.15rem;
+        }
+        
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .missing-ips-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .missing-ip-item {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #ff6b6b;
+            transition: all 0.3s ease;
+        }
+        
+        .missing-ip-item:hover {
+            background: rgba(255, 107, 107, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 107, 107, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid p-4">
+        <div class="main-container">
+            <!-- Header -->
+            <div class="header">
+                <a href="/" class="home-button">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <h1><i class="fas fa-cogs"></i> MikroTik Queue Parser</h1>
+                <p class="mb-0">Simple Queue Configuration Tool</p>
+            </div>
+
+            <div class="content-section">
+                <!-- Input Section -->
+                <div class="glass-card">
+                    <h4 class="section-title"><i class="fas fa-edit"></i>Queue Configuration Input</h4>
+                    <div class="input-section">
+                        <label for="queueData"><strong>Paste your MikroTik queue data here:</strong></label>
+                        <textarea id="queueData" placeholder="Paste your queue configuration lines here..."></textarea>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button onclick="parseData()">🚀 Parse Data</button>
+                        <button onclick="clearData()">🗑️ Clear</button>
+                        <button onclick="exportCSV()">📄 Export CSV</button>
+                    </div>
+                </div>
+                
+                <!-- Statistics Summary -->
+                      <div class="stats" id="stats" style="display: none;">
+                          <div class="stat-card">
+                              <span class="stat-number" id="totalCount">0</span>
+                              <span class="stat-label">Total Entries</span>
+                          </div>
+                          <div class="stat-card">
+                              <span class="stat-number" id="uniqueIPs">0</span>
+                              <span class="stat-label">Unique IPs</span>
+                          </div>
+                          <div class="stat-card">
+                              <span class="stat-number" id="missingIPs">0</span>
+                              <span class="stat-label">Missing IPs (/24)</span>
+                          </div>
+                      </div>
+                      
+                      <!-- Missing IPs Details -->
+                      <div id="missingIPsContainer" style="display: none;">
+                          <div class="glass-card" style="margin-top: 15px;">
+                              <h5 class="section-title"><i class="fas fa-exclamation-triangle"></i> Missing IP Addresses</h5>
+                              <div id="missingIPsList" class="missing-ips-list"></div>
+                          </div>
+                      </div>
+                    
+                    <div id="searchContainer" style="display: none;">
+                        <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by CSID or IP address..." onkeyup="filterTable()">
+                    </div>
+                    
+                    <div class="table-container" id="tableContainer" style="display: none;">
+                        <table id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th class="sortable" onclick="sortTable(1, this)">CSID</th>
+                                    <th class="sortable" onclick="sortTable(2, this)">IP Address</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="noData" class="no-data" style="display: none;">
+                        <p>📋 No data parsed yet. Please paste your MikroTik configuration above and click "Parse Data".</p>
+                    </div>
+                 </div>
+            </div>
+            
+            <!-- Signature -->
+            <div class="signature">
+                 <i class="fas fa-code"></i> Crafted by <span class="developer-name">Holil Askarullah</span>
+             </div>
+        </div>
+    </div>
+    </div>
+</body>
+
+    <script>
+        let parsedData = [];
+        let sortDirection = {};
+        
+        // Load sample data on page load
+        window.onload = function() {
+            loadSampleData();
+        };
+        
+        function loadSampleData() {
+            const sampleData = `30    name="SI-BK000245" target=10.14.11.13/32 parent=BB_45Mb_A packet-marks="" priority=8/8 queue=default-small/default-small limit-at=15M/15M max-limit=45M/45M burst-limit=0/0 burst-threshold=0/0 burst-time=0s/0s bucket-size=0.1/0.1 
+
+31    name="SI-BK000818" target=10.14.11.14/32 parent=BB_45Mb_A packet-marks="" priority=8/8 queue=default-small/default-small limit-at=15M/15M max-limit=45M/45M burst-limit=0/0 burst-threshold=0/0 burst-time=0s/0s bucket-size=0.1/0.1 
+
+32    name="SI-BK000256" target=10.14.11.17/32 parent=BB_45Mb_A packet-marks="" priority=8/8 queue=default-small/default-small limit-at=15M/15M max-limit=45M/45M burst-limit=0/0 burst-threshold=0/0 burst-time=0s/0s bucket-size=0.1/0.1`;
+            
+            document.getElementById('queueData').value = sampleData;
+            parseData();
+        };
+        
+        function parseData() {
+            const input = document.getElementById('queueData').value.trim();
+            
+            if (!input) {
+                showNoData();
+                return;
+            }
+            
+            // Clear previous data
+            parsedData = [];
+            
+            // Split by lines and process each line
+            const lines = input.split('\n');
+            
+            lines.forEach(line => {
+                // Look for SI-BK pattern and IP address pattern
+                const csidMatch = line.match(/name="(SI-BK\d+)"/);
+                const ipMatch = line.match(/target=(\d+\.\d+\.\d+\.\d+)\/\d+/);
+                
+                if (csidMatch && ipMatch) {
+                    parsedData.push({
+                        csid: csidMatch[1],
+                        ip: ipMatch[1]
+                    });
+                }
+            });
+            
+            if (parsedData.length > 0) {
+                displayResults();
+            } else {
+                showNoData();
+            }
+        }
+        
+        function sortTable(column, element) {
+            const headers = document.querySelectorAll('.sortable');
+            
+            // Reset all header styles except the clicked one
+            headers.forEach(header => {
+                if (header !== element) {
+                    header.classList.remove('asc', 'desc');
+                }
+            });
+            
+            // Determine sort direction
+            const currentDirection = sortDirection[column] || 'none';
+            let newDirection;
+            
+            if (currentDirection === 'none' || currentDirection === 'desc') {
+                newDirection = 'asc';
+            } else {
+                newDirection = 'desc';
+            }
+            
+            sortDirection[column] = newDirection;
+            
+            // Update header style
+            element.classList.remove('asc', 'desc');
+            element.classList.add(newDirection);
+            
+            // Sort the data
+            parsedData.sort((a, b) => {
+                let valueA, valueB;
+                
+                if (column === 1) { // CSID column
+                    valueA = a.csid;
+                    valueB = b.csid;
+                } else if (column === 2) { // IP column
+                    // For IP addresses, we need to sort numerically by each octet
+                    valueA = ipToNumber(a.ip);
+                    valueB = ipToNumber(b.ip);
+                }
+                
+                if (column === 2) {
+                    // Numeric comparison for IP addresses
+                    if (newDirection === 'asc') {
+                        return valueA - valueB;
+                    } else {
+                        return valueB - valueA;
+                    }
+                } else {
+                    // String comparison for CSID
+                    if (newDirection === 'asc') {
+                        return valueA.localeCompare(valueB);
+                    } else {
+                        return valueB.localeCompare(valueA);
+                    }
+                }
+            });
+            
+            // Re-render the table
+            displayResults();
+        }
+        
+        function ipToNumber(ip) {
+            // Convert IP address to a number for proper sorting
+            const parts = ip.split('.');
+            return (parseInt(parts[0]) << 24) + 
+                   (parseInt(parts[1]) << 16) + 
+                   (parseInt(parts[2]) << 8) + 
+                   parseInt(parts[3]);
+        }
+        
+        function displayResults() {
+            const tableBody = document.getElementById('tableBody');
+            const statsDiv = document.getElementById('stats');
+            const searchContainer = document.getElementById('searchContainer');
+            const tableContainer = document.getElementById('tableContainer');
+            const noData = document.getElementById('noData');
+            const missingIPsContainer = document.getElementById('missingIPsContainer');
+            
+            // Hide no data message
+            noData.style.display = 'none';
+            
+            // Show stats and table
+            statsDiv.style.display = 'flex';
+            searchContainer.style.display = 'block';
+            tableContainer.style.display = 'block';
+            
+            // Update stats
+            document.getElementById('totalCount').textContent = parsedData.length;
+            const uniqueIPs = new Set(parsedData.map(item => item.ip)).size;
+            document.getElementById('uniqueIPs').textContent = uniqueIPs;
+            
+            // Analyze missing IPs
+            const missingIPs = findMissingIPs();
+            document.getElementById('missingIPs').textContent = missingIPs.length;
+            
+            // Show missing IPs if any
+            if (missingIPs.length > 0) {
+                displayMissingIPs(missingIPs);
+                missingIPsContainer.style.display = 'block';
+            } else {
+                missingIPsContainer.style.display = 'none';
+            }
+            
+            // Clear and populate table
+            tableBody.innerHTML = '';
+            
+            parsedData.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.csid}</td>
+                    <td>${item.ip}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+        
+        function findMissingIPs() {
+            if (parsedData.length === 0) return [];
+            
+            // Get all unique IPs from parsed data
+            const existingIPs = new Set(parsedData.map(item => item.ip));
+            
+            // Find the network base (first 3 octets) from existing IPs
+            const networkBases = new Set();
+            existingIPs.forEach(ip => {
+                const parts = ip.split('.');
+                if (parts.length === 4) {
+                    const networkBase = `${parts[0]}.${parts[1]}.${parts[2]}`;
+                    networkBases.add(networkBase);
+                }
+            });
+            
+            // Find missing IPs for each network base
+            const missingIPs = [];
+            networkBases.forEach(networkBase => {
+                for (let i = 1; i <= 253; i++) {
+                    const testIP = `${networkBase}.${i}`;
+                    if (!existingIPs.has(testIP)) {
+                        missingIPs.push(testIP);
+                    }
+                }
+            });
+            
+            return missingIPs.sort((a, b) => {
+                return ipToNumber(a) - ipToNumber(b);
+            });
+        }
+        
+        function displayMissingIPs(missingIPs) {
+            const missingIPsList = document.getElementById('missingIPsList');
+            missingIPsList.innerHTML = '';
+            
+            missingIPs.forEach(ip => {
+                const ipItem = document.createElement('div');
+                ipItem.className = 'missing-ip-item';
+                ipItem.textContent = ip;
+                ipItem.title = `IP ${ip} is not assigned in the current configuration`;
+                missingIPsList.appendChild(ipItem);
+            });
+        }
+        
+        function filterTable() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            const tableBody = document.getElementById('tableBody');
+            const rows = tableBody.getElementsByTagName('tr');
+            
+            for (let i = 0; i < rows.length; i++) {
+                const csid = rows[i].getElementsByTagName('td')[1].textContent.toLowerCase();
+                const ip = rows[i].getElementsByTagName('td')[2].textContent.toLowerCase();
+                
+                if (csid.includes(searchTerm) || ip.includes(searchTerm)) {
+                    rows[i].style.display = '';
+                    
+                    // Highlight matching text
+                    if (searchTerm) {
+                        highlightText(rows[i].getElementsByTagName('td')[1], searchTerm);
+                        highlightText(rows[i].getElementsByTagName('td')[2], searchTerm);
+                    }
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+        }
+        
+        function highlightText(element, searchTerm) {
+            const originalText = element.textContent;
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            element.innerHTML = originalText.replace(regex, '<span class="highlight">$1</span>');
+        }
+        
+        function clearData() {
+            document.getElementById('queueData').value = '';
+            document.getElementById('searchBox').value = '';
+            parsedData = [];
+            sortDirection = {};
+            
+            // Reset header styles
+            const headers = document.querySelectorAll('.sortable');
+            headers.forEach(header => {
+                header.classList.remove('asc', 'desc');
+            });
+            
+            showNoData();
+        }
+        
+        function showNoData() {
+            document.getElementById('stats').style.display = 'none';
+            document.getElementById('searchContainer').style.display = 'none';
+            document.getElementById('tableContainer').style.display = 'none';
+            document.getElementById('missingIPsContainer').style.display = 'none';
+            document.getElementById('noData').style.display = 'block';
+        }
+        
+        function exportCSV() {
+            if (parsedData.length === 0) {
+                alert('No data to export. Please parse some data first.');
+                return;
+            }
+            
+            let csvContent = "CSID,IP Address\n";
+            parsedData.forEach(item => {
+                csvContent += `${item.csid},${item.ip}\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'mikrotik_queue_data.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

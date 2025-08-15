@@ -17,8 +17,7 @@ import openpyxl
 import paramiko
 import re
 import socket
-import subprocess
-import platform
+
 import dotenv
 from dotenv import load_dotenv
 
@@ -251,56 +250,7 @@ def parse_mikrotik_firewall_output(output):
     
     return unique_data
 
-def ping_device(ip, timeout=3):
-    """
-    Ping a device to check if it's online.
-    Uses platform-specific ping commands for cross-platform compatibility.
-    
-    Args:
-        ip (str): IP address to ping
-        timeout (int): Timeout in seconds (default: 3)
-        
-    Returns:
-        bool: True if device responds, False otherwise
-    """
-    try:
-        # Determine ping command based on operating system
-        if platform.system().lower() == "windows":
-            cmd = ["ping", "-n", "1", "-w", str(timeout * 1000), ip]
-        else:
-            cmd = ["ping", "-c", "1", "-W", str(timeout), ip]
-        
-        # Execute ping command
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout + 2)
-        return result.returncode == 0
-    except Exception as e:
-        print(f"Error pinging {ip}: {e}")
-        return False
 
-def check_device_status_realtime(ip):
-    """
-    Check device status using multiple methods for better reliability.
-    First tries ping, then falls back to SSH port connectivity test.
-    
-    Args:
-        ip (str): IP address of the device to check
-        
-    Returns:
-        str: 'online' if device is reachable, 'offline' otherwise
-    """
-    # First try ping
-    if ping_device(ip):
-        return 'online'
-    
-    # If ping fails, try SSH connection test
-    try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(3)
-        result = sock.connect_ex((ip, MIKROTIK_SSH_PORT))
-        sock.close()
-        return 'online' if result == 0 else 'offline'
-    except Exception:
-        return 'offline'
 
 # ============================================================================
 #           Device Management Functions (devices.json)
@@ -1154,43 +1104,12 @@ def get_co_mapping():
 @app.route('/api/devices-suspend', methods=['GET'])
 def get_devices_suspend():
     """
-    Get list of available MikroTik devices from JSON file with real-time status
+    Get list of available MikroTik devices from JSON file
     """
     devices = load_devices_suspend()
-    
-    # Check if real-time status checking is requested
-    check_status = request.args.get('check_status', 'false').lower() == 'true'
-    
-    if check_status:
-        # Update device status with real-time checking
-        for device in devices:
-            device['status'] = check_device_status_realtime(device['ip'])
-    
     return jsonify({'devices': devices})
 
-@app.route('/api/devices-suspend/status-check', methods=['POST'])
-def check_devices_status():
-    """
-    Check real-time status for specific devices
-    """
-    try:
-        data = request.get_json()
-        device_ips = data.get('device_ips', [])
-        
-        if not device_ips:
-            return jsonify({'error': 'No device IPs provided'}), 400
-        
-        status_results = {}
-        for ip in device_ips:
-            status_results[ip] = check_device_status_realtime(ip)
-        
-        return jsonify({
-            'success': True,
-            'status_results': status_results
-        })
-    
-    except Exception as e:
-        return jsonify({'error': f'Status check failed: {str(e)}'}), 500
+
 
 @app.route('/api/devices-active', methods=['GET'])
 def get_devices_active():

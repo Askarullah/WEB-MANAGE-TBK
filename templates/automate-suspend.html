@@ -802,9 +802,7 @@
                     </button>
                     <button class="btn secondary" onclick="clearSelection()">Clear Selection</button>
                     <button class="btn secondary" onclick="selectAll()">Select All</button>
-                    <button class="btn" id="manualCheckBtn" onclick="manualStatusCheck()">
-                        Check Status Now
-                    </button>
+
                 </div>
                 
                 <div class="filter-section">
@@ -884,7 +882,7 @@
         });
         
         function loadDevicesWithStatus(initialLoad = false) {
-            const url = initialLoad ? '/api/devices-suspend?check_status=true' : '/api/devices-suspend';
+            const url = '/api/devices-suspend';
             
             // Show loading animation on initial load
             if (initialLoad) {
@@ -933,115 +931,11 @@
         
 
         
-        async function checkDevicesStatusRealtime() {
-            if (devices.length === 0) return;
-            
-            try {
-                const deviceIps = devices.map(device => device.ip);
-                
-                const response = await fetch('/api/devices-suspend/status-check', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        device_ips: deviceIps
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    const currentTime = new Date().toLocaleTimeString();
-                    let statusChanges = 0;
-                    
-                    // Update device status in memory
-                    devices.forEach(device => {
-                        if (data.status_results[device.ip]) {
-                            const newStatus = data.status_results[device.ip];
-                            if (device.status !== newStatus) {
-                                device.status = newStatus;
-                                device.lastStatusChange = currentTime;
-                                updateDeviceCardStatus(device);
-                                statusChanges++;
-                            }
-                        }
-                    });
-                    
-                    // Update filtered devices
-                    filteredDevices = devices.filter(device => {
-                        const locationFilter = document.getElementById('locationFilter').value;
-                        const statusFilter = document.getElementById('statusFilter').value;
-                        const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
-                        
-                        const matchesLocation = !locationFilter || device.location === locationFilter;
-                        const matchesStatus = !statusFilter || device.status === statusFilter;
-                        const matchesSearch = !searchFilter || 
-                            device.name.toLowerCase().includes(searchFilter) ||
-                            device.ip.includes(searchFilter);
-                        
-                        return matchesLocation && matchesStatus && matchesSearch;
-                    });
-                    
-                    updateDeviceCount();
-                    
-                    // Show success message
-                    if (statusChanges > 0) {
-                        showMessage(`Status check completed: ${statusChanges} device(s) status changed`, 'success');
-                    } else {
-                        showMessage(`Status check completed at ${currentTime} - No changes detected`, 'success');
-                    }
-                }
-            } catch (error) {
-                console.error('Error checking device status:', error);
-                showMessage('Status check failed. Please try again.', 'error');
-            }
-        }
+
         
-        function updateDeviceCardStatus(device) {
-            const deviceCard = document.getElementById(`device-${device.ip}`);
-            if (deviceCard) {
-                const statusElement = deviceCard.querySelector('.status');
-                if (statusElement) {
-                    statusElement.className = `status ${device.status}`;
-                    statusElement.textContent = device.status.toUpperCase();
-                    
-                    // Add visual feedback for status change
-                    deviceCard.style.transform = 'scale(1.02)';
-                    deviceCard.style.transition = 'transform 0.3s ease';
-                    setTimeout(() => {
-                        deviceCard.style.transform = '';
-                    }, 300);
-                }
-                
-                // Update or add timestamp
-                let timestampElement = deviceCard.querySelector('.status-timestamp');
-                if (!timestampElement) {
-                    timestampElement = document.createElement('div');
-                    timestampElement.className = 'status-timestamp';
-                    deviceCard.appendChild(timestampElement);
-                }
-                
-                if (device.lastStatusChange) {
-                    timestampElement.textContent = `Last updated: ${device.lastStatusChange}`;
-                }
-            }
-        }
+
         
-        function manualStatusCheck() {
-            const button = document.getElementById('manualCheckBtn');
-            if (button) {
-                button.disabled = true;
-                button.textContent = 'Checking...';
-            }
-            
-            checkDevicesStatusRealtime().finally(() => {
-                if (button) {
-                    button.disabled = false;
-                    button.textContent = 'Check Status Now';
-                }
-            });
-        }
+
 
         function loadDevices() {
             const deviceGrid = document.getElementById('deviceGrid');

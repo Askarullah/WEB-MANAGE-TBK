@@ -406,6 +406,12 @@ def simple_queue_parser():
     """Route for the Simple Queue Parser page"""
     return render_template('simple-queue-parser.html')
 
+@app.route('/parse-mac-olt.html')
+def parse_mac_olt():
+    """Route for the Parse MAC OLT page"""
+    return render_template('parse-mac-olt.html')
+
+
 
 # ============================================================================
 #           Flask Routes - SCRIPT TRACKING EXCEL

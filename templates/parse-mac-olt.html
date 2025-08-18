@@ -168,6 +168,36 @@
             font-family: 'Courier New', monospace;
         }
 
+        .status-online {
+            background: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-offline {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .onu-id {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #34495e;
+            background: #ecf0f1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
         .copy-btn {
             background: #667eea;
             color: white;
@@ -265,7 +295,7 @@
                 </div>
                 <textarea 
                     id="dataInput" 
-                    placeholder="Paste your EPON data here...&#10;&#10;Format should include columns like:&#10;ONU ID | MAC Address | Description | ..."
+                    placeholder="Paste your OLT EPON data here...&#10;&#10;Expected format (tab-separated):&#10;ONU ID | Status | MAC Address | Description | RTT(TQ) | Type | Auth Flag | Exchange | Auth Mode | Loid/Password | Action&#10;&#10;Example:&#10;EPON0/1:2 | Offline | 48:35:2E:47:83:18 | TLB11-DEWI_MULYANI_SI-BK004758 | ..."
                 ></textarea>
             </div>
             
@@ -279,6 +309,8 @@
                 <div class="results">
                     <div class="stats">
                         <span>Total Items: <span id="totalCount">0</span></span>
+                        <span>Online: <span id="onlineCount">0</span></span>
+                        <span>Offline: <span id="offlineCount">0</span></span>
                         <span>CSID Codes: <span id="csidCount">0</span></span>
                     </div>
                     <div class="table-container" id="tableContainer">
@@ -340,28 +372,40 @@
             const lines = inputData.split('\n');
             parsedData = [];
             
-            lines.forEach(line => {
+            lines.forEach((line, index) => {
                 if (line.trim() === '') return;
                 
-                const columns = line.split('\t');
-                if (columns.length >= 3) {
-                    const macAddress = columns[1].trim();
-                    const description = columns[2].trim();
+                // Skip header line
+                if (index === 0 && line.includes('ONU ID') && line.includes('Status')) {
+                    return;
+                }
+                
+                // Split by tab or multiple spaces
+                const columns = line.split(/\t+|\s{2,}/).map(col => col.trim());
+                
+                if (columns.length >= 4) {
+                    const onuId = columns[0];
+                    const status = columns[1];
+                    const macAddress = columns[2];
+                    const description = columns[3];
                     
-                    // Check if MAC address is valid (not empty)
-                    if (macAddress && macAddress !== 'MAC Address') {
+                    // Check if this looks like valid data (not header)
+                    if (onuId && status && macAddress && description && 
+                        !onuId.includes('ONU ID') && 
+                        macAddress.match(/^[0-9A-Fa-f:]{17}$/)) {
+                        
                         // Extract SI-BK code from description (treating as CSID)
                         const csidMatch = description.match(/SI-BK\d{6}/);
                         const csidCode = csidMatch ? csidMatch[0] : null;
                         
-                        // Only include items with CSID codes
-                        if (csidCode) {
-                            parsedData.push({
-                                macAddress: macAddress,
-                                description: description,
-                                csidCode: csidCode
-                            });
-                        }
+                        // Include all valid entries, not just those with CSID
+                        parsedData.push({
+                            onuId: onuId,
+                            status: status,
+                            macAddress: macAddress,
+                            description: description,
+                            csidCode: csidCode
+                        });
                     }
                 }
             });
@@ -372,13 +416,21 @@
         function displayResults() {
             const tableContainer = document.getElementById('tableContainer');
             const totalCount = document.getElementById('totalCount');
+            const onlineCount = document.getElementById('onlineCount');
+            const offlineCount = document.getElementById('offlineCount');
             const csidCount = document.getElementById('csidCount');
             
+            const onlineItems = parsedData.filter(item => item.status.toLowerCase() === 'online');
+            const offlineItems = parsedData.filter(item => item.status.toLowerCase() === 'offline');
+            const itemsWithCSID = parsedData.filter(item => item.csidCode);
+            
             totalCount.textContent = parsedData.length;
-            csidCount.textContent = parsedData.length;
+            onlineCount.textContent = onlineItems.length;
+            offlineCount.textContent = offlineItems.length;
+            csidCount.textContent = itemsWithCSID.length;
             
             if (parsedData.length === 0) {
-                tableContainer.innerHTML = '<div class="placeholder">No CSID codes found. Make sure your data contains descriptions with SI-BK followed by 6 digits.</div>';
+                tableContainer.innerHTML = '<div class="placeholder">No OLT data found. Paste your EPON OLT data with tab-separated columns above.</div>';
                 return;
             }
             
@@ -386,18 +438,24 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>CSID</th>
+                            <th>ONU ID</th>
+                            <th>Status</th>
                             <th>MAC Address</th>
+                            <th>CSID</th>
+                            <th>Description</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         ${parsedData.map((item, index) => `
                             <tr>
-                                <td><span class="csid-code">${item.csidCode}</span></td>
+                                <td><span class="onu-id">${item.onuId}</span></td>
+                                <td><span class="status-${item.status.toLowerCase()}">${item.status}</span></td>
                                 <td><span class="mac-address">${item.macAddress}</span></td>
+                                <td>${item.csidCode ? `<span class="csid-code">${item.csidCode}</span>` : '<span style="color: #95a5a6;">N/A</span>'}</td>
+                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${item.description}">${item.description}</td>
                                 <td>
-                                    <button class="copy-btn" onclick="copyRowToClipboard('${item.csidCode}', '${item.macAddress}', ${index})">
+                                    <button class="copy-btn" onclick="copyRowToClipboard('${item.onuId}', '${item.macAddress}', '${item.csidCode || 'N/A'}', ${index})">
                                         Copy
                                     </button>
                                 </td>
@@ -410,8 +468,8 @@
             tableContainer.innerHTML = tableHTML;
         }
 
-        function copyRowToClipboard(csidCode, macAddress, index) {
-            const textToCopy = `${csidCode}\t${macAddress}`;
+        function copyRowToClipboard(onuId, macAddress, csidCode, index) {
+            const textToCopy = `${onuId}\t${macAddress}\t${csidCode}`;
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const buttons = document.getElementsByClassName('copy-btn');
                 const button = buttons[index];
@@ -431,12 +489,12 @@
                 return;
             }
             
-            let csvContent = 'CSID,MAC Address,Description\n';
+            let csvContent = 'ONU ID,Status,MAC Address,CSID,Description\n';
             parsedData.forEach(item => {
-                csvContent += `"${item.csidCode}","${item.macAddress}","${item.description}"\n`;
+                csvContent += `"${item.onuId}","${item.status}","${item.macAddress}","${item.csidCode || 'N/A'}","${item.description}"\n`;
             });
             
-            downloadFile(csvContent, 'epon_parsed_data.csv', 'text/csv');
+            downloadFile(csvContent, 'olt_epon_parsed_data.csv', 'text/csv');
         }
 
         function exportAsJSON() {
@@ -455,7 +513,7 @@
                 return;
             }
             
-            const allData = parsedData.map(item => `${item.csidCode}\t${item.macAddress}`).join('\n');
+            const allData = parsedData.map(item => `${item.onuId}\t${item.macAddress}\t${item.csidCode || 'N/A'}`).join('\n');
             navigator.clipboard.writeText(allData).then(() => {
                 const button = document.querySelector('.export-btn:last-child');
                 const originalText = button.innerHTML;

@@ -411,9 +411,11 @@ def parse_mac_olt():
     """Route for the Parse MAC OLT page"""
     return render_template('parse-mac-olt.html')
 
-
-
-# ============================================================================
+@app.route('/all-olt-parser.html')
+def all_olt_parser():   
+    """Route for the All OLT Parser page"""         
+    return render_template('all-olt-parser.html')
+    
 #           Flask Routes - SCRIPT TRACKING EXCEL
 # ============================================================================
 

@@ -3,40 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Device Data Parser</title>
+    <title>OLT Data Parser</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #E8E6F0;
             min-height: 100vh;
-        }
-
-        .container {
-            background: white;
-            border-radius: 15px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
             position: relative;
+            padding: 20px;
+        }
+
+        /* Simplified background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
+            max-width: 1200px;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        /* Simplified header */
+        .header {
+            background: linear-gradient(135deg, 
+                rgba(76, 175, 80, 0.8) 0%, 
+                rgba(69, 160, 73, 0.8) 50%,
+                rgba(56, 142, 60, 0.8) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.02em;
+            position: relative;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            font-weight: 500;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
         }
 
         .home-btn {
             position: absolute;
-            top: -10px;
-            left: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
             color: white;
-            border: none;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             border-radius: 8px;
             padding: 10px 15px;
             text-decoration: none;
@@ -45,81 +95,127 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 14px;
         }
 
         .home-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
             color: white;
             text-decoration: none;
         }
 
+        .container {
+            padding: 50px 40px;
+        }
+
         .input-section {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 30px;
             margin-bottom: 30px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         label {
             display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-            color: #555;
-            font-size: 1.1em;
+            margin-bottom: 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
         }
 
         textarea {
             width: 100%;
             height: 200px;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
             font-family: 'Courier New', monospace;
             font-size: 14px;
             resize: vertical;
-            transition: border-color 0.3s ease;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
         }
 
         textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 10px rgba(102, 126, 234, 0.3);
+            border-color: #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.2);
+            background: rgba(255, 255, 255, 0.95);
         }
 
         .button-group {
             text-align: center;
-            margin: 20px 0;
+            margin: 30px 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
         }
 
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
             color: white;
             border: none;
-            padding: 12px 30px;
+            padding: 15px 30px;
             font-size: 16px;
-            border-radius: 25px;
+            font-weight: 600;
+            border-radius: 20px;
             cursor: pointer;
-            margin: 0 10px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.2);
         }
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .load-sample-btn {
+            background: linear-gradient(135deg, #2196F3 0%, #64B5F6 100%);
+            font-size: 14px;
+            padding: 10px 20px;
+            margin-top: 15px;
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.2);
+        }
+
+        .load-sample-btn:hover {
+            box-shadow: 0 6px 20px rgba(33, 150, 243, 0.3);
         }
 
         .results-section {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 30px;
             margin-top: 30px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
         }
 
         .stats {
             display: flex;
             justify-content: space-around;
             margin: 20px 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border-radius: 10px;
+            padding: 25px;
+            background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+            border-radius: 12px;
             color: white;
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.2);
         }
 
         .stat-item {
@@ -127,90 +223,111 @@
         }
 
         .stat-number {
-            font-size: 2em;
-            font-weight: bold;
+            font-size: 2.2rem;
+            font-weight: 800;
             display: block;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .stat-label {
-            font-size: 0.9em;
+            font-size: 0.95rem;
             opacity: 0.9;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
             overflow: hidden;
+            background: rgba(255, 255, 255, 0.9);
         }
 
         th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
-            padding: 15px;
+            padding: 18px 15px;
             text-align: left;
-            font-weight: bold;
-            font-size: 1.1em;
+            font-weight: 700;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #eee;
-            transition: background-color 0.3s ease;
+            padding: 15px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            font-weight: 500;
         }
 
         tr:hover td {
-            background-color: #f8f9ff;
+            background-color: rgba(76, 175, 80, 0.05);
         }
 
         tr:nth-child(even) td {
-            background-color: #f9f9f9;
+            background-color: rgba(0, 0, 0, 0.02);
         }
 
         .not-found {
             color: #e74c3c;
             font-style: italic;
-            font-weight: bold;
+            font-weight: 700;
+            background: rgba(231, 76, 60, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
         }
 
         .download-section {
             text-align: center;
-            margin-top: 20px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.3);
         }
 
         .sample-data {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
             font-family: 'Courier New', monospace;
             font-size: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
 
-        .load-sample-btn {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            font-size: 14px;
-            padding: 8px 20px;
-            margin-top: 10px;
+        .sample-data strong {
+            color: #2c3e50;
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>
+    <div class="main-container">
+        <div class="header">
             <a href="/" class="home-btn">
                 <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
                 </svg>
                 Home
             </a>
-            📡 Device Data Parser
-        </h1>
+            <h1>
+                <i class="fas fa-network-wired"></i> Device Data Parser
+            </h1>
+            <p>Universal OLT Data Extraction Tool</p>
+        </div>
+        
+        <div class="container">
         
         <div class="input-section">
+            <div class="section-title">
+                <i class="fas fa-edit"></i>
+                Input Data
+            </div>
             <label for="rawData">Paste your device data here:</label>
             <textarea id="rawData" placeholder="Paste your device data here..."></textarea>
             
@@ -228,6 +345,10 @@
         </div>
 
         <div class="results-section" id="resultsSection" style="display: none;">
+            <div class="section-title">
+                <i class="fas fa-chart-bar"></i>
+                Parsed Results
+            </div>
             <div class="stats" id="stats"></div>
             
             <table id="resultsTable">
@@ -244,6 +365,7 @@
                 <button onclick="downloadCSV()">💾 Download CSV</button>
                 <button onclick="copyToClipboard()">📋 Copy to Clipboard</button>
             </div>
+        </div>
         </div>
     </div>
 

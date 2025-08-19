@@ -373,6 +373,211 @@
           font-size: 1rem;
         }
       }
+
+      /* Modal Styles */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .modal-content {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 20px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+      }
+
+      .modal-header {
+        background: linear-gradient(135deg, #4CAF50, #66BB6A);
+        color: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .close-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 2rem;
+        cursor: pointer;
+        padding: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+      }
+
+      .close-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: rotate(90deg);
+      }
+
+      .modal-body {
+        padding: 30px;
+      }
+
+      .modal-body p {
+        font-size: 1.1rem;
+        color: #6c757d;
+        margin-bottom: 25px;
+        text-align: center;
+      }
+
+      .parser-options {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .parser-option {
+        display: flex;
+        align-items: center;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.8);
+        border: 2px solid rgba(76, 175, 80, 0.2);
+        border-radius: 15px;
+        text-decoration: none;
+        color: #2c3e50;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .parser-option:hover {
+        background: rgba(76, 175, 80, 0.1);
+        border-color: #4CAF50;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(76, 175, 80, 0.2);
+        text-decoration: none;
+        color: #2c3e50;
+      }
+
+      .parser-option.wolck:hover {
+        border-color: #2196F3;
+        background: rgba(33, 150, 243, 0.1);
+        box-shadow: 0 8px 25px rgba(33, 150, 243, 0.2);
+      }
+
+      .option-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #4CAF50, #66BB6A);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        transition: all 0.3s ease;
+      }
+
+      .parser-option.wolck .option-icon {
+        background: linear-gradient(135deg, #2196F3, #64B5F6);
+      }
+
+      .option-icon i {
+        font-size: 24px;
+        color: white;
+      }
+
+      .option-content h4 {
+        margin: 0 0 8px 0;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #2c3e50;
+      }
+
+      .option-content p {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #6c757d;
+        line-height: 1.4;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(50px) scale(0.9);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .modal-content {
+          width: 95%;
+          margin: 20px;
+        }
+        
+        .modal-header {
+          padding: 15px 20px;
+        }
+        
+        .modal-header h3 {
+          font-size: 1.3rem;
+        }
+        
+        .modal-body {
+          padding: 20px;
+        }
+        
+        .parser-option {
+          padding: 15px;
+        }
+        
+        .option-icon {
+          width: 50px;
+          height: 50px;
+          margin-right: 15px;
+        }
+        
+        .option-icon i {
+          font-size: 20px;
+        }
+        
+        .option-content h4 {
+          font-size: 1.1rem;
+        }
+        
+        .option-content p {
+          font-size: 0.9rem;
+        }
+      }
     </style>
   </head>
   <body>
@@ -440,7 +645,7 @@
                 <span class="btn-text">SIMPLE-QUEUE PARSER</span>
                 </a>
 
-              <a href="parse-mac-olt.html" class="luxury-btn fade-in">
+              <a href="#" class="luxury-btn fade-in" onclick="showOltParserModal()">
                 <div class="btn-icon">
                   <i class="fas fa-user-slash"></i>
                 </div>
@@ -459,6 +664,64 @@
       </div>
     </div>
     
+    <!-- OLT Parser Selection Modal -->
+    <div id="oltParserModal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-network-wired"></i> Choose OLT Parser Type</h3>
+          <button class="close-btn" onclick="closeOltParserModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Select the appropriate parser for your OLT device:</p>
+          <div class="parser-options">
+            <a href="parse-mac-olt.html" class="parser-option wolck">
+              <div class="option-icon">
+                <i class="fas fa-desktop"></i>
+              </div>
+              <div class="option-content">
+                <h4>WOLCK OLT</h4>
+                <p>Blue Interface GUI - Specialized parser for WOLCK OLT devices</p>
+              </div>
+            </a>
+            <a href="all-olt-parser.html" class="parser-option universal">
+              <div class="option-icon">
+                <i class="fas fa-globe"></i>
+              </div>
+              <div class="option-content">
+                <h4>Universal OLT</h4>
+                <p>General parser for all OLT devices except WOLCK</p>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function showOltParserModal() {
+        document.getElementById('oltParserModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+      
+      function closeOltParserModal() {
+        document.getElementById('oltParserModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+      }
+      
+      // Close modal when clicking outside
+      document.getElementById('oltParserModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeOltParserModal();
+        }
+      });
+      
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeOltParserModal();
+        }
+      });
+    </script>
   </body>
 </html>

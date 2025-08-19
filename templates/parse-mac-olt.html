@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EPON Data Parser</title>
+    <title>OLT WOLCK DATA PARSER</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,38 +14,66 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #E8E6F0;
             min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow-x: hidden;
+            position: relative;
             padding: 20px;
         }
 
-        .container {
+        /* Simplified background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin: 20px auto;
             max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 1;
             overflow: hidden;
         }
 
+        /* Simplified header */
         .header {
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            background: linear-gradient(135deg, 
+                rgba(33, 150, 243, 0.9) 0%, 
+                rgba(25, 118, 210, 0.9) 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            padding: 30px;
+            padding: 40px 30px;
             text-align: center;
             position: relative;
         }
 
         .header h1 {
-            font-size: 2.5rem;
+            font-size: 3rem;
+            font-weight: 800;
             margin-bottom: 10px;
-            font-weight: 700;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            letter-spacing: -0.02em;
         }
 
         .header p {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
+            font-weight: 500;
             opacity: 0.9;
+            letter-spacing: 0.5px;
         }
 
         .home-btn {
@@ -72,25 +102,157 @@
         }
 
         .content {
-            padding: 30px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+            padding: 40px;
+        }
+
+        .grid {
+            display: flex;
+            flex-direction: column;
             gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .results-table th {
+            background: linear-gradient(135deg, 
+                rgba(52, 152, 219, 0.9) 0%, 
+                rgba(41, 128, 185, 0.9) 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 0.3px;
+        }
+
+        .results-table td {
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            color: #2c3e50;
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .results-table tr:hover td {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 20px 25px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-left: 4px solid #3498db;
+            flex: 1;
+            min-width: 180px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .stat-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #1a252f;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: #34495e;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        button {
+            padding: 14px 28px;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+        }
+
+        .parse-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .parse-btn:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .clear-btn {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: #2c3e50;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            min-width: 120px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .clear-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
         }
 
         .input-section, .output-section {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.2s ease;
             display: flex;
             flex-direction: column;
         }
 
+        .input-section:hover, .output-section:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
         .section-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 15px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 25px;
             color: #2c3e50;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
+            letter-spacing: -0.01em;
         }
 
         .icon {
@@ -99,30 +261,37 @@
             fill: currentColor;
         }
 
-        #dataInput {
+        #inputData {
             width: 100%;
-            height: 400px;
-            border: 2px solid #e0e6ed;
-            border-radius: 10px;
+            height: 350px;
+            min-height: 350px;
+            max-height: 350px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
             padding: 15px;
             font-family: 'Courier New', monospace;
-            font-size: 12px;
-            resize: vertical;
-            transition: border-color 0.3s ease;
+            font-size: 13px;
+            resize: none;
+            transition: border-color 0.2s ease;
+            background: rgba(255, 255, 255, 0.95);
+            color: #2c3e50;
+            line-height: 1.4;
         }
 
-        #dataInput:focus {
+        #inputData:focus {
             outline: none;
             border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
         }
 
         .results {
-            border: 2px solid #e0e6ed;
-            border-radius: 10px;
-            height: 400px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            height: 350px;
+            min-height: 350px;
+            max-height: 350px;
             overflow: auto;
-            background: #f8f9fa;
+            background: rgba(255, 255, 255, 0.08);
         }
 
         .stats {
@@ -242,34 +411,46 @@
 
         .export-section {
             grid-column: 1 / -1;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #e0e6ed;
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .export-section:hover {
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
         }
 
         .export-buttons {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             flex-wrap: wrap;
         }
 
         .export-btn {
             background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
             color: white;
-            border: none;
+            padding: 14px 24px;
+            border: 2px solid transparent;
             border-radius: 8px;
-            padding: 12px 20px;
-            cursor: pointer;
             font-weight: 600;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
         }
 
         .export-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(39, 174, 96, 0.3);
         }
 
         .placeholder {
@@ -279,18 +460,77 @@
             padding: 40px;
         }
 
-        @media (max-width: 768px) {
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .main-container {
+                margin: 10px;
+                border-radius: 24px;
+            }
+            
+            .grid {
+                gap: 25px;
+            }
+            
             .content {
-                grid-template-columns: 1fr;
-                gap: 20px;
+                padding: 30px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .main-container {
+                margin: 5px;
+                border-radius: 20px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 30px 20px;
             }
             
             .header h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
+            }
+            
+            .header p {
+                font-size: 1rem;
+            }
+            
+            .home-btn {
+                position: static;
+                margin-bottom: 20px;
+                align-self: flex-start;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stat-item {
+                min-width: auto;
             }
             
             .export-buttons {
+                flex-direction: column;
+            }
+            
+            .export-btn {
                 justify-content: center;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .parse-btn, .clear-btn {
+                min-width: auto;
             }
 
             .data-table {
@@ -302,66 +542,103 @@
                 padding: 8px;
             }
         }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .section-title {
+                font-size: 1.3rem;
+            }
+            
+            .input-section, .output-section, .export-section {
+                padding: 20px;
+                border-radius: 16px;
+            }
+            
+            #inputData {
+                height: 300px;
+                min-height: 300px;
+                max-height: 300px;
+                padding: 15px;
+                font-size: 12px;
+            }
+            
+            .results {
+                height: 300px;
+                min-height: 300px;
+                max-height: 300px;
+            }
+            
+            button {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="main-container">
         <div class="header">
             <a href="/" class="home-btn">
-                <svg class="icon" style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-                </svg>
+                <i class="fas fa-home"></i>
                 Home
             </a>
-            <h1>🌐 EPON Data Parser</h1>
-            <p>Paste your EPON data to extract MAC addresses and CSID codes</p>
+            <h1><i class="fas fa-search"></i> EPON Data Parser</h1>
+            <p>Advanced parsing tool for EPON device data with intelligent column detection</p>
         </div>
         
         <div class="content">
-            <div class="input-section">
-                <div class="section-title">
-                    <svg class="icon" viewBox="0 0 24 24">
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                    </svg>
-                    Input Data
-                </div>
-                <textarea 
-                    id="dataInput" 
-                    placeholder="Paste your OLT EPON data here...&#10;&#10;Expected format (tab-separated):&#10;ONU ID | Status | MAC Address | Description | RTT(TQ) | Type | Auth Flag | Exchange | Auth Mode | Loid/Password | Action&#10;&#10;Example:&#10;EPON0/1:2 | Offline | 48:35:2E:47:83:18 | TLB11-DEWI_MULYANI_SI-BK004758 | ..."
-                ></textarea>
-            </div>
-            
-            <div class="output-section">
-                <div class="section-title">
-                    <svg class="icon" viewBox="0 0 24 24">
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                    </svg>
-                    Parsed Results
-                </div>
-                <div class="results">
-                    <div class="stats">
-                        <span>Total Items: <span id="totalCount">0</span></span>
-                        <span>Online: <span id="onlineCount">0</span></span>
-                        <span>Offline: <span id="offlineCount">0</span></span>
-                        <span>CSID Codes: <span id="csidCount">0</span></span>
+            <div class="grid">
+                <div class="input-section">
+                    <div class="section-title">
+                        <i class="fas fa-upload"></i>
+                        Input Data
                     </div>
-                    <div class="table-container" id="tableContainer">
-                        <div class="placeholder">
-                            No data parsed yet. Paste your EPON data above to get started.
+                    <label for="inputData">Paste your EPON data here:</label>
+                    <textarea id="inputData" placeholder="Paste your EPON device data here...&#10;&#10;Example format:&#10;show epon onu-information&#10;&#10;OnuIndex   OnuType    OnuSn           OnuState    OnuDistance(m)  OnuIpAddress    OnuMacAddress&#10;1/1/1:1    ZTE-F601   ZTEGC8B2D4E5    online      150             192.168.1.100   00:11:22:33:44:55&#10;1/1/1:2    ZTE-F601   ZTEGC8B2D4E6    online      200             192.168.1.101   00:11:22:33:44:56"></textarea>
+                    
+                    <div class="button-group">
+                        <button class="parse-btn" onclick="parseData()">
+                            <i class="fas fa-cogs"></i>
+                            Parse Data
+                        </button>
+                        <button class="clear-btn" onclick="clearData()">
+                            <i class="fas fa-trash"></i>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div class="output-section">
+                    <div class="section-title">
+                        <i class="fas fa-table"></i>
+                        Parsed Results
+                    </div>
+                    <div class="results">
+                        <div class="stats">
+                            <div class="stat-item">
+                                <div class="stat-value" id="totalCount">0</div>
+                                <div class="stat-label">Total Records</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="onlineCount">0</div>
+                                <div class="stat-label">Online</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" id="offlineCount">0</div>
+                                <div class="stat-label">Offline</div>
+                            </div>
                         </div>
+                        <div id="resultsTable"></div>
                     </div>
                 </div>
             </div>
             
             <div class="export-section">
                 <div class="section-title">
-                    <svg class="icon" viewBox="0 0 24 24">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14,2 14,8 20,8"/>
-                        <line x1="16" y1="13" x2="8" y2="13"/>
-                        <line x1="16" y1="17" x2="8" y2="17"/>
-                        <polyline points="10,9 9,9 8,9"/>
-                    </svg>
+                    <i class="fas fa-download"></i>
                     Export Options
                 </div>
                 <div class="export-buttons">
@@ -394,13 +671,10 @@
     <script>
         let parsedData = [];
 
-        // Parse data automatically when input changes
-        document.getElementById('dataInput').addEventListener('input', function() {
-            parseData();
-        });
+        // Removed auto-parsing for better performance
 
         function parseData() {
-            const inputData = document.getElementById('dataInput').value;
+            const inputData = document.getElementById('inputData').value;
             const lines = inputData.split('\n');
             parsedData = [];
             
@@ -446,11 +720,10 @@
         }
 
         function displayResults() {
-            const tableContainer = document.getElementById('tableContainer');
+            const tableContainer = document.getElementById('resultsTable');
             const totalCount = document.getElementById('totalCount');
             const onlineCount = document.getElementById('onlineCount');
             const offlineCount = document.getElementById('offlineCount');
-            const csidCount = document.getElementById('csidCount');
             
             const onlineItems = parsedData.filter(item => item.status.toLowerCase() === 'online');
             const offlineItems = parsedData.filter(item => item.status.toLowerCase() === 'offline');
@@ -459,7 +732,6 @@
             totalCount.textContent = parsedData.length;
             onlineCount.textContent = onlineItems.length;
             offlineCount.textContent = offlineItems.length;
-            csidCount.textContent = itemsWithCSID.length;
             
             if (parsedData.length === 0) {
                 tableContainer.innerHTML = '<div class="placeholder">No OLT data found. Paste your EPON OLT data with tab-separated columns above.</div>';
@@ -568,6 +840,15 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        function clearData() {
+            document.getElementById('inputData').value = '';
+            parsedData = [];
+            document.getElementById('totalCount').textContent = '0';
+            document.getElementById('onlineCount').textContent = '0';
+            document.getElementById('offlineCount').textContent = '0';
+            document.getElementById('resultsTable').innerHTML = '<div class="placeholder">No data to display</div>';
         }
     </script>
 </body>

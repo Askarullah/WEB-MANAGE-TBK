@@ -41,6 +41,33 @@ MIKROTIK_PASSWORD = os.getenv('MIKROTIK_PASSWORD')
 # MikroTik Authentication and SSH Connection Management
 # ============================================================================
 
+def load_mikrotik_credentials():
+    """
+    Load MikroTik credentials from environment variables
+    Returns list of credentials with actual passwords for internal use
+    """
+    credentials = []
+    
+    # Read all available users (up to 10 for safety)
+    for i in range(1, 11):
+        if i == 1:
+            username_key = 'MIKROTIK_USERNAME'
+            password_key = 'MIKROTIK_PASSWORD'
+        else:
+            username_key = f'MIKROTIK_USERNAME_{i}'
+            password_key = f'MIKROTIK_PASSWORD_{i}'
+        
+        username = os.getenv(username_key)
+        password = os.getenv(password_key)
+        
+        if username:
+            credentials.append({
+                'username': username,
+                'password': password if password and password.strip() else None
+            })
+    
+    return credentials
+
 def get_stored_password_for_user(username):
     """
     Retrieve stored password for a specific username from environment variables.
@@ -415,6 +442,11 @@ def parse_mac_olt():
 def all_olt_parser():   
     """Route for the All OLT Parser page"""         
     return render_template('all-olt-parser.html')
+
+@app.route('/custom-command.html')
+def custom_command():
+    """Route for the Custom Command Executor page"""
+    return render_template('custom-command.html')
     
 #           Flask Routes - SCRIPT TRACKING EXCEL
 # ============================================================================
@@ -930,6 +962,72 @@ def debug_output():
         
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
+        
+@app.route('/api/mikrotik/execute-custom-command', methods=['POST'])
+def execute_custom_command():
+    """
+    API endpoint to execute custom MikroTik commands on a single device
+    This endpoint is designed to work with the custom command executor frontend
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        ip = data.get('ip')
+        command = data.get('command')
+        username = data.get('username')
+        password = data.get('password')
+        
+        # Validate required parameters
+        if not ip:
+            return jsonify({'error': 'IP address is required'}), 400
+        
+        if not command:
+            return jsonify({'error': 'Command is required'}), 400
+        
+        if not username:
+            return jsonify({'error': 'Username is required'}), 400
+        
+        # Handle stored credentials - if password is null, look up stored password
+        if password is None:
+            stored_credentials = load_mikrotik_credentials()
+            user_credential = next((cred for cred in stored_credentials if cred['username'] == username), None)
+            if user_credential and user_credential.get('password'):
+                password = user_credential['password']
+            else:
+                return jsonify({'error': 'No stored password found for this user'}), 400
+        
+        if not password:
+            return jsonify({'error': 'Password is required'}), 400
+        
+        # Execute the command on the MikroTik device
+        success, output = connect_to_mikrotik(ip, command, username, password)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'device_ip': ip,
+                'command': command,
+                'output': output,
+                'timestamp': datetime.now().isoformat()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'device_ip': ip,
+                'command': command,
+                'error': output,
+                'timestamp': datetime.now().isoformat()
+            }), 500
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
         
 @app.route('/api/mikrotik/batch-status-check', methods=['POST'])
 def batch_status_check():

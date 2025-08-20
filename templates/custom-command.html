@@ -312,6 +312,56 @@
             max-height: 400px;
             overflow-y: auto;
             margin: 10px 0;
+            position: relative;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(79, 70, 229, 0.8);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .copy-btn:hover {
+            background: rgba(79, 70, 229, 1);
+            transform: scale(1.05);
+        }
+
+        .copy-btn.copied {
+            background: rgba(16, 185, 129, 0.8);
+        }
+
+        .copy-all-btn {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin: 10px 5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .copy-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(5, 150, 105, 0.3);
+        }
+
+        .output-container {
+            position: relative;
         }
 
         .device-result {
@@ -1037,6 +1087,9 @@
                 <p><strong>Total Devices:</strong> ${executionResults.length}</p>
                 <p><strong>Successful:</strong> ${successCount}</p>
                 <p><strong>Failed:</strong> ${errorCount}</p>
+                <button class="copy-all-btn" onclick="copyAllOutputs()">
+                    📋 Copy All Outputs
+                </button>
             `;
             resultsContainer.appendChild(summary);
             
@@ -1058,9 +1111,12 @@
                 content.className = 'device-result-content';
                 
                 if (result.success && result.output) {
+                    const outputId = `output-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                     content.innerHTML = `
                         <h5>Command Output:</h5>
-                        <div class="command-output">${result.output}</div>
+                        <div class="output-container">
+                            <div class="command-output" id="${outputId}">${result.output}<button class="copy-btn" onclick="copyOutput('${outputId}')">📋 Copy</button></div>
+                        </div>
                     `;
                 } else if (result.error) {
                     content.innerHTML = `
@@ -1075,6 +1131,141 @@
                 deviceResult.appendChild(content);
                 resultsContainer.appendChild(deviceResult);
             });
+        }
+
+        // Copy individual output
+        function copyOutput(outputId) {
+            const outputElement = document.getElementById(outputId);
+            if (!outputElement) return;
+            
+            // Get text content without the copy button
+            const copyBtn = outputElement.querySelector('.copy-btn');
+            const originalDisplay = copyBtn.style.display;
+            copyBtn.style.display = 'none';
+            
+            const textToCopy = outputElement.textContent.trim();
+            
+            copyBtn.style.display = originalDisplay;
+            
+            // Use robust copy method with fallback
+            try {
+                // Create a temporary textarea element
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                document.body.appendChild(textarea);
+                textarea.select();
+                
+                // Try clipboard API first
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => {
+                            showCopySuccess(copyBtn);
+                        })
+                        .catch(err => {
+                            // If clipboard API fails, try execCommand
+                            const success = document.execCommand('copy');
+                            if (success) {
+                                showCopySuccess(copyBtn);
+                            } else {
+                                alert('Failed to copy: ' + err);
+                            }
+                        });
+                } else {
+                    // For older browsers or non-secure contexts
+                    const success = document.execCommand('copy');
+                    if (success) {
+                        showCopySuccess(copyBtn);
+                    } else {
+                        alert('Your browser doesn\'t support clipboard operations');
+                    }
+                }
+                
+                // Clean up
+                document.body.removeChild(textarea);
+            } catch (err) {
+                alert('Failed to copy: ' + err);
+            }
+        }
+        
+        function showCopySuccess(btn) {
+            const originalText = btn.textContent;
+            btn.textContent = '✅ Copied!';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+
+        // Copy all outputs
+        function copyAllOutputs() {
+            let allOutputs = [];
+            
+            executionResults.forEach(result => {
+                if (result.success && result.output) {
+                    const deviceInfo = `=== ${result.device.name || result.device.ip} (${result.device.ip}) ===`;
+                    allOutputs.push(deviceInfo);
+                    allOutputs.push(result.output.trim());
+                    allOutputs.push(''); // Empty line for separation
+                }
+            });
+            
+            if (allOutputs.length === 0) {
+                alert('No command outputs to copy');
+                return;
+            }
+            
+            const textToCopy = allOutputs.join('\n');
+            
+            // Use robust copy method with fallback
+            try {
+                // Create a temporary textarea element
+                const textarea = document.createElement('textarea');
+                textarea.value = textToCopy;
+                document.body.appendChild(textarea);
+                textarea.select();
+                
+                // Try clipboard API first
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(() => {
+                            showCopyAllSuccess();
+                        })
+                        .catch(err => {
+                            // If clipboard API fails, try execCommand
+                            const success = document.execCommand('copy');
+                            if (success) {
+                                showCopyAllSuccess();
+                            } else {
+                                alert('Failed to copy: ' + err);
+                            }
+                        });
+                } else {
+                    // For older browsers or non-secure contexts
+                    const success = document.execCommand('copy');
+                    if (success) {
+                        showCopyAllSuccess();
+                    } else {
+                        alert('Your browser doesn\'t support clipboard operations');
+                    }
+                }
+                
+                // Clean up
+                document.body.removeChild(textarea);
+            } catch (err) {
+                alert('Failed to copy: ' + err);
+            }
+        }
+        
+        function showCopyAllSuccess() {
+            const btn = document.querySelector('.copy-all-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✅ All Outputs Copied!';
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
         }
 
         // Initialize page

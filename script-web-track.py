@@ -447,6 +447,11 @@ def all_olt_parser():
 def custom_command():
     """Route for the Custom Command Executor page"""
     return render_template('custom-command.html')
+
+@app.route('/address-list-parser.html')
+def address_list_parser():
+    """Route for the Address List Parser page"""
+    return render_template('address-list-parser.html')
     
 #           Flask Routes - SCRIPT TRACKING EXCEL
 # ============================================================================

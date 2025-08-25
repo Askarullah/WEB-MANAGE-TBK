@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Configuration Parser</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .home-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            padding: 10px 15px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .home-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-section label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .export-btn {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+
+        .clear-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);
+        }
+
+        .stats {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .results-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+        }
+
+        /* Sortable table styles */
+        .sortable-header {
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+
+        .sortable-header:hover {
+            background: rgba(255, 255, 255, 0.2) !important;
+        }
+
+        .sort-icon {
+            margin-left: 8px;
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+
+        .sortable-header.asc .sort-icon::before {
+            content: '▲';
+            opacity: 1;
+        }
+
+        .sortable-header.desc .sort-icon::before {
+            content: '▼';
+            opacity: 1;
+        }
+
+        .sortable-header:not(.asc):not(.desc) .sort-icon::before {
+            content: '⇅';
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+            transition: background-color 0.2s ease;
+        }
+
+        tr:hover td {
+            background-color: #f8f9fa;
+        }
+
+        .status-active {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .status-disabled {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .status-dynamic {
+            color: #ffc107;
+            font-weight: 600;
+        }
+
+        .ip-cell {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .csid-cell {
+            font-weight: 600;
+            color: #007bff;
+        }
+
+        .name-cell {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #6c757d;
+            font-style: italic;
+            padding: 40px;
+        }
+
+        .filter-row {
+            background: #f8f9fa !important;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: white;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 2px rgba(79, 172, 254, 0.1);
+        }
+
+        .filter-input::placeholder {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="home-btn">
+                <i class="fas fa-home"></i>
+                Home
+            </a>
+            <h1>Network Configuration Parser</h1>
+            <p>Extract IP addresses and Customer IDs from network configuration data</p>
+        </div>
+
+        <div class="content">
+            <div class="input-section">
+                <label for="configData">Paste your network configuration data:</label>
+                <textarea 
+                    id="configData" 
+                    placeholder="Paste your network configuration here...
+Example:
+0   allow_remote_... mvn18.solnet.my.id                   apr/02/2023 01:06:41
+1   allow_remote_... 202.154.185.202                      apr/02/2023 01:06:44
+5   ;;; Muhammad Taufik
+    SI-BK000201      10.14.11.1                           apr/15/2023 08:15:07"></textarea>
+            </div>
+
+            <div class="controls">
+                <button onclick="parseData()">Parse Data</button>
+                <button class="export-btn" onclick="exportToCSV()">Export to CSV</button>
+                <button class="clear-btn" onclick="clearFilters()">Clear Filters</button>
+                <button class="clear-btn" onclick="clearAll()">Clear All</button>
+            </div>
+
+            <div id="statsSection" class="stats" style="display: none;">
+                <div class="stat-item">
+                    <span id="totalEntries" class="stat-number">0</span>
+                    <span class="stat-label">Total Entries</span>
+                </div>
+                <div class="stat-item">
+                    <span id="activeEntries" class="stat-number">0</span>
+                    <span class="stat-label">Active</span>
+                </div>
+                <div class="stat-item">
+                    <span id="disabledEntries" class="stat-number">0</span>
+                    <span class="stat-label">Disabled</span>
+                </div>
+                <div class="stat-item">
+                    <span id="dynamicEntries" class="stat-number">0</span>
+                    <span class="stat-label">Dynamic</span>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <div class="table-container">
+                    <table id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th class="sortable-header" onclick="sortTable(1, 'text')" data-column="1">
+                                    Status <span class="sort-icon"></span>
+                                </th>
+                                <th class="sortable-header" onclick="sortTable(2, 'text')" data-column="2">
+                                    CSID / List Name <span class="sort-icon"></span>
+                                </th>
+                                <th class="sortable-header" onclick="sortTable(3, 'ip')" data-column="3">
+                                    IP Address <span class="sort-icon"></span>
+                                </th>
+                                <th class="sortable-header" onclick="sortTable(4, 'text')" data-column="4">
+                                    Customer Name <span class="sort-icon"></span>
+                                </th>
+                                <th class="sortable-header" onclick="sortTable(5, 'date')" data-column="5">
+                                    Creation Date <span class="sort-icon"></span>
+                                </th>
+                            </tr>
+                            <tr class="filter-row">
+                                <td></td>
+                                <td>
+                                    <input type="text" id="statusFilter" placeholder="Filter status..." class="filter-input" onkeyup="applyFilters()">
+                                </td>
+                                <td>
+                                    <input type="text" id="csidFilter" placeholder="Filter CSID..." class="filter-input" onkeyup="applyFilters()">
+                                </td>
+                                <td>
+                                    <input type="text" id="ipFilter" placeholder="Filter IP..." class="filter-input" onkeyup="applyFilters()">
+                                </td>
+                                <td>
+                                    <input type="text" id="nameFilter" placeholder="Filter name..." class="filter-input" onkeyup="applyFilters()">
+                                </td>
+                                <td>
+                                    <input type="text" id="dateFilter" placeholder="Filter date..." class="filter-input" onkeyup="applyFilters()">
+                                </td>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr>
+                                <td colspan="6" class="no-data">No data parsed yet. Please paste your configuration data and click "Parse Data".</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let parsedData = [];
+        let filteredData = [];
+
+        // Sorting variables
+        let currentSortColumn = -1;
+        let currentSortDirection = 'asc';
+
+        function parseData() {
+            const input = document.getElementById('configData').value;
+            if (!input.trim()) {
+                alert('Please paste your configuration data first.');
+                return;
+            }
+
+            const lines = input.trim().split('\n');
+            parsedData = [];
+            let currentCustomerName = '';
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                // Parse the line
+                const result = parseLine(line);
+                if (result) {
+                    // Check if previous line has customer name
+                    if (i > 0) {
+                        const prevLine = lines[i - 1].trim();
+                        const nameMatch = prevLine.match(/;;;\s*(.+)/);
+                        if (nameMatch) {
+                            result.customerName = nameMatch[1].trim();
+                        }
+                    }
+                    parsedData.push(result);
+                }
+            }
+
+            displayResults();
+            updateStats();
+            applyFilters(); // Apply any existing filters to new data
+        }
+
+        function parseLine(line) {
+            // Remove leading numbers and flags
+            const cleanLine = line.replace(/^\s*\d+\s*[XD]?\s*/, '');
+            
+            // Pattern for entries with CSID/List name and IP
+            const patterns = [
+                // Pattern: CSID/Name    IP    Date
+                /^([^\s]+)\s+([0-9./]+(?:\s+[0-9./]+)*)\s+([a-z]{3}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/,
+                // Pattern: allow_remote_... IP Date
+                /^(allow_remote_[^\s]*)\s+([0-9a-zA-Z./]+)\s+([a-z]{3}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/,
+                // Pattern: Other list names
+                /^([A-Z_][A-Z0-9_]*)\s+([0-9./]+)\s+([a-z]{3}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/
+            ];
+
+            // Determine status
+            let status = 'Active';
+            if (line.includes('X ')) status = 'Disabled';
+            else if (line.includes('D ')) status = 'Dynamic';
+
+            for (const pattern of patterns) {
+                const match = cleanLine.match(pattern);
+                if (match) {
+                    return {
+                        status: status,
+                        csidOrListName: match[1],
+                        ipAddress: match[2],
+                        creationDate: match[3],
+                        customerName: ''
+                    };
+                }
+            }
+
+            return null;
+        }
+
+        function displayResults() {
+            const tbody = document.getElementById('resultsBody');
+            tbody.innerHTML = '';
+
+            const dataToShow = filteredData.length > 0 || hasActiveFilters() ? filteredData : parsedData;
+
+            if (dataToShow.length === 0) {
+                const message = hasActiveFilters() ? 'No entries match the current filters.' : 
+                               parsedData.length === 0 ? 'No valid entries found. Please check your data format.' : 
+                               'No entries match the current filters.';
+                tbody.innerHTML = `<tr><td colspan="6" class="no-data">${message}</td></tr>`;
+                return;
+            }
+
+            dataToShow.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${parsedData.indexOf(item) + 1}</td>
+                    <td class="status-${item.status.toLowerCase()}">${item.status}</td>
+                    <td class="csid-cell">${item.csidOrListName}</td>
+                    <td class="ip-cell">${item.ipAddress}</td>
+                    <td class="name-cell">${item.customerName || '-'}</td>
+                    <td>${item.creationDate}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Sorting function
+        function sortTable(columnIndex, dataType) {
+            // Determine sort direction
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortDirection = 'asc';
+                currentSortColumn = columnIndex;
+            }
+
+            // Update header classes
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.classList.remove('asc', 'desc');
+            });
+            
+            const currentHeader = document.querySelector(`[data-column="${columnIndex}"]`);
+            if (currentHeader) {
+                currentHeader.classList.add(currentSortDirection);
+            }
+
+            // Sort the data
+            const dataToSort = filteredData.length > 0 || hasActiveFilters() ? filteredData : parsedData;
+            dataToSort.sort((a, b) => {
+                let valueA, valueB;
+                
+                switch (columnIndex) {
+                    case 1: // Status
+                        valueA = a.status;
+                        valueB = b.status;
+                        break;
+                    case 2: // CSID / List Name
+                        valueA = a.csidOrListName;
+                        valueB = b.csidOrListName;
+                        break;
+                    case 3: // IP Address
+                        valueA = a.ipAddress;
+                        valueB = b.ipAddress;
+                        break;
+                    case 4: // Customer Name
+                        valueA = a.customerName || '';
+                        valueB = b.customerName || '';
+                        break;
+                    case 5: // Creation Date
+                        valueA = a.creationDate;
+                        valueB = b.creationDate;
+                        break;
+                    default:
+                        return 0;
+                }
+
+                // Handle different data types
+                if (dataType === 'ip') {
+                    // IP address sorting
+                    const ipA = valueA.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
+                    const ipB = valueB.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
+                    valueA = ipA;
+                    valueB = ipB;
+                } else if (dataType === 'date') {
+                    // Date sorting - convert date strings to comparable format
+                    valueA = new Date(valueA.replace(/(\w{3})\/(\d{2})\/(\d{4})/, '$2/$1/$3'));
+                    valueB = new Date(valueB.replace(/(\w{3})\/(\d{2})\/(\d{4})/, '$2/$1/$3'));
+                } else {
+                    // Text sorting (case insensitive)
+                    valueA = valueA.toString().toLowerCase();
+                    valueB = valueB.toString().toLowerCase();
+                }
+
+                if (valueA < valueB) {
+                    return currentSortDirection === 'asc' ? -1 : 1;
+                }
+                if (valueA > valueB) {
+                    return currentSortDirection === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+
+            // Re-render the table
+            displayResults();
+        }
+
+        function updateStats() {
+            const dataToCount = filteredData.length > 0 || hasActiveFilters() ? filteredData : parsedData;
+            const total = dataToCount.length;
+            const active = dataToCount.filter(item => item.status === 'Active').length;
+            const disabled = dataToCount.filter(item => item.status === 'Disabled').length;
+            const dynamic = dataToCount.filter(item => item.status === 'Dynamic').length;
+
+            document.getElementById('totalEntries').textContent = total;
+            document.getElementById('activeEntries').textContent = active;
+            document.getElementById('disabledEntries').textContent = disabled;
+            document.getElementById('dynamicEntries').textContent = dynamic;
+
+            document.getElementById('statsSection').style.display = parsedData.length > 0 ? 'block' : 'none';
+        }
+
+        function exportToCSV() {
+            const dataToExport = filteredData.length > 0 || hasActiveFilters() ? filteredData : parsedData;
+            
+            if (dataToExport.length === 0) {
+                alert('No data to export. Please parse your data first.');
+                return;
+            }
+
+            const headers = ['#', 'Status', 'CSID/List Name', 'IP Address', 'Customer Name', 'Creation Date'];
+            const csvContent = [
+                headers.join(','),
+                ...dataToExport.map((item, index) => [
+                    parsedData.indexOf(item) + 1,
+                    `"${item.status}"`,
+                    `"${item.csidOrListName}"`,
+                    `"${item.ipAddress}"`,
+                    `"${item.customerName || ''}"`,
+                    `"${item.creationDate}"`
+                ].join(','))
+            ].join('\n');
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            const filename = hasActiveFilters() ? 'network_configuration_filtered.csv' : 'network_configuration.csv';
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function clearAll() {
+            document.getElementById('configData').value = '';
+            parsedData = [];
+            filteredData = [];
+            
+            // Clear all filters
+            clearFilters();
+            
+            // Reset sorting state
+            currentSortColumn = -1;
+            currentSortDirection = 'asc';
+            
+            // Remove sort classes from headers
+            document.querySelectorAll('.sortable-header').forEach(header => {
+                header.classList.remove('asc', 'desc');
+            });
+            
+            document.getElementById('resultsBody').innerHTML = '<tr><td colspan="6" class="no-data">No data parsed yet. Please paste your configuration data and click "Parse Data".</td></tr>';
+            document.getElementById('statsSection').style.display = 'none';
+        }
+
+        // Filter functions
+        function applyFilters() {
+            const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
+            const csidFilter = document.getElementById('csidFilter').value.toLowerCase();
+            const ipFilter = document.getElementById('ipFilter').value.toLowerCase();
+            const nameFilter = document.getElementById('nameFilter').value.toLowerCase();
+            const dateFilter = document.getElementById('dateFilter').value.toLowerCase();
+
+            filteredData = parsedData.filter(item => {
+                return (
+                    item.status.toLowerCase().includes(statusFilter) &&
+                    item.csidOrListName.toLowerCase().includes(csidFilter) &&
+                    item.ipAddress.toLowerCase().includes(ipFilter) &&
+                    (item.customerName || '').toLowerCase().includes(nameFilter) &&
+                    item.creationDate.toLowerCase().includes(dateFilter)
+                );
+            });
+
+            displayResults();
+            updateStats();
+        }
+
+        function hasActiveFilters() {
+            return document.getElementById('statusFilter').value ||
+                   document.getElementById('csidFilter').value ||
+                   document.getElementById('ipFilter').value ||
+                   document.getElementById('nameFilter').value ||
+                   document.getElementById('dateFilter').value;
+        }
+
+        function clearFilters() {
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('csidFilter').value = '';
+            document.getElementById('ipFilter').value = '';
+            document.getElementById('nameFilter').value = '';
+            document.getElementById('dateFilter').value = '';
+            filteredData = [];
+            
+            if (parsedData.length > 0) {
+                displayResults();
+                updateStats();
+            }
+        }
+    </script>
+</body>
+</html>

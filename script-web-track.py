@@ -452,6 +452,11 @@ def custom_command():
 def address_list_parser():
     """Route for the Address List Parser page"""
     return render_template('address-list-parser.html')
+
+@app.route('/arp-parser.html')
+def arp_parser():
+    """Route for the ARP Parser page"""
+    return render_template('arp-parser.html')
     
 #           Flask Routes - SCRIPT TRACKING EXCEL
 # ============================================================================

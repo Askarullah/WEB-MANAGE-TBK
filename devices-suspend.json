@@ -24,6 +24,7 @@
   {"name": "CO-MUTIARA-R6-196", "ip": "103.248.217.196", "location": "Mutiara Branch", "status": "online"},
   {"name": "CO-MUTIARA-R7-197", "ip": "103.248.217.197", "location": "Mutiara Branch", "status": "online"},
   {"name": "CO-MUTIARA-R8-198", "ip": "103.248.217.198", "location": "Mutiara Branch", "status": "online"},
+  {"name": "CO-MUTIARA-R9-199", "ip": "103.248.217.199", "location": "Mutiara Branch", "status": "online"},
   {"name": "CO-OFFICE-R2-231", "ip": "103.248.217.231", "location": "Office Branch", "status": "online"},
   {"name": "CO-OFFICE-R3-232", "ip": "103.248.217.232", "location": "Office Branch", "status": "online"},
   {"name": "CO-OFFICE-R4-233", "ip": "103.248.217.233", "location": "Office Branch", "status": "online"},

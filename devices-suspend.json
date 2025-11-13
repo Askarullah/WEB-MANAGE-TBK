@@ -6,6 +6,7 @@
   {"name": "CO-AZAM-R5-225", "ip": "103.248.217.225", "location": "Azam Branch", "status": "online"},
   {"name": "CO-AZAM-R6-226", "ip": "103.248.217.226", "location": "Azam Branch", "status": "online"},
   {"name": "CO-AZAM-R7-227", "ip": "103.248.217.227", "location": "Azam Branch", "status": "online"},
+  {"name": "CO-AZAM-R8-228", "ip": "103.248.217.228", "location": "Azam Branch", "status": "online"},
   {"name": "CO-MERAL-R1-249", "ip": "103.248.217.249", "location": "Meral Branch", "status": "online"},
   {"name": "CO-MERAL-R2-212", "ip": "103.248.217.212", "location": "Meral Branch", "status": "online"},
   {"name": "CO-MERAL-R3-213", "ip": "103.248.217.213", "location": "Meral Branch", "status": "online"},
@@ -25,6 +26,7 @@
   {"name": "CO-MUTIARA-R7-197", "ip": "103.248.217.197", "location": "Mutiara Branch", "status": "online"},
   {"name": "CO-MUTIARA-R8-198", "ip": "103.248.217.198", "location": "Mutiara Branch", "status": "online"},
   {"name": "CO-MUTIARA-R9-199", "ip": "103.248.217.199", "location": "Mutiara Branch", "status": "online"},
+  {"name": "CO-OFFICE-R1-247", "ip": "103.248.217.247", "location": "Office Branch", "status": "online"},
   {"name": "CO-OFFICE-R2-231", "ip": "103.248.217.231", "location": "Office Branch", "status": "online"},
   {"name": "CO-OFFICE-R3-232", "ip": "103.248.217.232", "location": "Office Branch", "status": "online"},
   {"name": "CO-OFFICE-R4-233", "ip": "103.248.217.233", "location": "Office Branch", "status": "online"},
@@ -35,5 +37,6 @@
   {"name": "CO-PN-R2-181", "ip": "103.248.217.181", "location": "PN Branch", "status": "online"},
   {"name": "CO-PN-R3-182", "ip": "103.248.217.182", "location": "PN Branch", "status": "online"},
   {"name": "CO-PN-R4-183", "ip": "103.248.217.183", "location": "PN Branch", "status": "online"},
-  {"name": "CO-PN-R5-184", "ip": "103.248.217.184", "location": "PN Branch", "status": "online"}
+  {"name": "CO-PN-R5-184", "ip": "103.248.217.184", "location": "PN Branch", "status": "online"},
+  {"name": "CO-PONGKAR-R1-166", "ip": "103.248.217.166", "location": "Pongkar Branch", "status": "online"}
 ]

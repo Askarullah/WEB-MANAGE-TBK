@@ -6,6 +6,7 @@
 {"name":"CO-AZAM-R5-225","ip":"103.248.217.225","co":"CO-AZAM-R5","location":"Azam Branch","description":"CO Azam"},
 {"name":"CO-AZAM-R6-226","ip":"103.248.217.226","co":"CO-AZAM-R6","location":"Azam Branch","description":"CO Azam"},
 {"name":"CO-AZAM-R7-227","ip":"103.248.217.227","co":"CO-AZAM-R7","location":"Azam Branch","description":"CO Azam"},
+{"name":"CO-AZAM-R8-228","ip":"103.248.217.228","co":"CO-AZAM-R8","location":"Azam Branch","description":"CO Azam"},
 {"name":"CO-MERAL-R1-249","ip":"103.248.217.249","co":"CO-MERAL-R1","location":"Meral Branch","description":"CO Meral"},
 {"name":"CO-MERAL-R2-212","ip":"103.248.217.212","co":"CO-MERAL-R2","location":"Meral Branch","description":"CO Meral"},
 {"name":"CO-MERAL-R3-213","ip":"103.248.217.213","co":"CO-MERAL-R3","location":"Meral Branch","description":"CO Meral"},
@@ -25,6 +26,7 @@
 {"name":"CO-MUTIARA-R7-197","ip":"103.248.217.197","co":"CO-MUTIARA-R7","location":"Mutiara Branch","description":"CO Mutiara"},
 {"name":"CO-MUTIARA-R8-198","ip":"103.248.217.198","co":"CO-MUTIARA-R8","location":"Mutiara Branch","description":"CO Mutiara"},
 {"name":"CO-MUTIARA-R9-199","ip":"103.248.217.199","co":"CO-MUTIARA-R9","location":"Mutiara Branch","description":"CO Mutiara"},
+{"name":"CO-OFFICE-R1-247","ip":"103.248.217.247","co":"CO-OFFICE-R1","location":"Office Branch","description":"CO Office"},
 {"name":"CO-OFFICE-R2-231","ip":"103.248.217.231","co":"CO-OFFICE-R2","location":"Office Branch","description":"CO Office"},
 {"name":"CO-OFFICE-R3-232","ip":"103.248.217.232","co":"CO-OFFICE-R3","location":"Office Branch","description":"CO Office"},
 {"name":"CO-OFFICE-R4-233","ip":"103.248.217.233","co":"CO-OFFICE-R4","location":"Office Branch","description":"CO Office"},
@@ -35,6 +37,7 @@
 {"name":"CO-PN-R2-181","ip":"103.248.217.181","co":"CO-PN-R2","location":"PN Branch","description":"CO PN"},
 {"name":"CO-PN-R3-182","ip":"103.248.217.182","co":"CO-PN-R3","location":"PN Branch","description":"CO PN"},
 {"name":"CO-PN-R4-183","ip":"103.248.217.183","co":"CO-PN-R4","location":"PN Branch","description":"CO PN"},
-{"name":"CO-PN-R5-184","ip":"103.248.217.184","co":"CO-PN-R5","location":"PN Branch","description":"CO PN"}
+{"name":"CO-PN-R5-184","ip":"103.248.217.184","co":"CO-PN-R5","location":"PN Branch","description":"CO PN"},
+{"name":"CO-PONGKAR-R1-166","ip":"103.248.217.166","co":"CO-PONGKAR-R1","location":"Pongkar Branch","description":"CO Pongkar"}
 
 ]

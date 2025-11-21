@@ -32,6 +32,7 @@
 {"name":"CO-OFFICE-R4-233","ip":"103.248.217.233","co":"CO-OFFICE-R4","location":"Office Branch","description":"CO Office"},
 {"name":"CO-OFFICE-R5-234","ip":"103.248.217.234","co":"CO-OFFICE-R5","location":"Office Branch","description":"CO Office"},
 {"name":"CO-OFFICE-R6-235","ip":"103.248.217.235","co":"CO-OFFICE-R6","location":"Office Branch","description":"CO Office"},
+{"name":"CO-OFFICE-R7-236","ip":"103.248.217.236","co":"CO-OFFICE-R7","location":"Office Branch","description":"CO Office"},
 {"name":"CO-PASIR-PANJANG-R1-161","ip":"103.248.217.161","co":"CO-PASIR-PANJANG-R1","location":"PasirPanjang Branch","description":"CO PasirPanjang"},
 {"name":"CO-PN-R1-248","ip":"103.248.217.248","co":"CO-PN-R1","location":"PN Branch","description":"CO PN"},
 {"name":"CO-PN-R2-181","ip":"103.248.217.181","co":"CO-PN-R2","location":"PN Branch","description":"CO PN"},

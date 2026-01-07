@@ -217,9 +217,10 @@ def connect_to_mikrotik(ip, command, username=None, password=None):
 
 def connect_to_olt(ip, command, username=None, password=None):
     """
-    Connect to OLT device with full login sequence
+    Connect to OLT device via Telnet with full login sequence using raw sockets
+    Handles pagination (--More-- prompts) automatically
     """
-    ssh_client = None
+    sock = None
     auth_username = username if username else OLT_USERNAME
     auth_password = password if password else OLT_PASSWORD
 
@@ -227,174 +228,201 @@ def connect_to_olt(ip, command, username=None, password=None):
         return False, "OLT credentials are not configured"
 
     try:
-        ssh_client = paramiko.SSHClient()
-        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.load_system_host_keys()
-
-        print(f"Connecting to OLT {ip}...")
+        print(f"Connecting to OLT {ip} via Telnet...")
         
-        # Step 1: SSH Connection
-        ssh_client.connect(
-            hostname=ip,
-            username=auth_username,
-            password=auth_password,
-            port=OLT_SSH_PORT,
-            timeout=30,
-            auth_timeout=30,
-            banner_timeout=30,
-            look_for_keys=False,
-            allow_agent=False,
-            compress=False
-        )
-
-        print(f"SSH connected to {ip}, starting interactive shell...")
+        # Step 1: Create socket connection
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(30)
+        sock.connect((ip, OLT_SSH_PORT))
         
-        # Step 2: Open interactive shell
-        channel = ssh_client.invoke_shell()
-        channel.settimeout(10)
+        print(f"Telnet connected to {ip}, starting login sequence...")
         
         output = ""
         command_output = ""
         
-        # Helper function to wait for text and send response
-        def wait_and_send(expected_text, send_text, timeout=8):
-            nonlocal output
-            import time
-            buffer = ""
-            start_time = time.time()
-            
-            while time.time() - start_time < timeout:
-                if channel.recv_ready():
-                    chunk = channel.recv(4096).decode('utf-8', errors='ignore')
-                    buffer += chunk
-                    output += chunk
-                    print(f"Received: {repr(chunk[:100])}")  # Debug output
-                    
-                    # Check for expected text (case insensitive, strip whitespace)
-                    if expected_text.lower() in buffer.lower():
-                        print(f"Found '{expected_text}', sending: {send_text if send_text != auth_password else '***'}")
-                        channel.send(send_text + '\n')
-                        time.sleep(0.8)  # Wait for response
-                        return True
-                
-                time.sleep(0.1)
-            
-            print(f"Timeout waiting for: {expected_text}")
-            print(f"Buffer content: {repr(buffer)}")
-            return False
+        # Helper function to receive data
+        def receive_data(timeout=5):
+            sock.settimeout(timeout)
+            data = b""
+            try:
+                while True:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+                    time.sleep(0.1)
+                    # Check if there's more data
+                    sock.settimeout(0.1)
+            except socket.timeout:
+                pass
+            except Exception as e:
+                print(f"Receive error: {e}")
+            sock.settimeout(timeout)
+            return data.decode('utf-8', errors='ignore')
         
-        # Step 3: Wait for initial banner
-        import time
-        time.sleep(3)  # Give more time for banner
-        if channel.recv_ready():
-            initial = channel.recv(8192).decode('utf-8', errors='ignore')
-            output += initial
-            print(f"Initial banner:\n{initial}")
+        # Helper function to send data
+        def send_data(text):
+            sock.sendall((text + "\r\n").encode('utf-8'))
+            time.sleep(0.5)
         
-        # Step 4: Send username at Login prompt
-        print("Waiting for Login prompt...")
-        if not wait_and_send("login:", auth_username, timeout=10):
-            # Try sending username anyway
-            print("Sending username anyway...")
-            channel.send(auth_username + '\n')
-            time.sleep(1)
-        
-        # Step 5: Send password at Password prompt
-        print("Waiting for Password prompt...")
-        if not wait_and_send("password:", auth_password, timeout=10):
-            return False, "Login password prompt not found or timeout"
-        
-        # Step 6: Wait for user mode prompt ">"
-        print("Waiting for user prompt '>'...")
+        # Step 2: Wait for initial banner
         time.sleep(2)
-        user_prompt = ""
-        if channel.recv_ready():
-            user_prompt = channel.recv(4096).decode('utf-8', errors='ignore')
-            output += user_prompt
-            print(f"User prompt: {repr(user_prompt)}")
+        initial_banner = receive_data(timeout=3)
+        output += initial_banner
+        print(f"Initial banner: {repr(initial_banner[:200])}")
         
-        # Step 7: Send "enable" command
+        # Step 3: Wait for "Login:" or "Username:" prompt
+        print("Waiting for login prompt...")
+        time.sleep(1)
+        login_prompt = receive_data(timeout=5)
+        output += login_prompt
+        print(f"Login prompt: {repr(login_prompt[:200])}")
+        
+        # Step 4: Send username
+        print(f"Sending username: {auth_username}")
+        send_data(auth_username)
+        
+        # Step 5: Wait for "Password:" prompt
+        print("Waiting for password prompt...")
+        time.sleep(1)
+        password_prompt = receive_data(timeout=5)
+        output += password_prompt
+        print(f"Password prompt: {repr(password_prompt[:200])}")
+        
+        # Step 6: Send password
+        print("Sending password")
+        send_data(auth_password)
+        time.sleep(2)
+        
+        # Step 7: Read response after login
+        login_response = receive_data(timeout=3)
+        output += login_response
+        print(f"Login response: {repr(login_response[:200])}")
+        
+        # Check if login failed
+        if "incorrect" in login_response.lower() or "failed" in login_response.lower() or "denied" in login_response.lower():
+            return False, "Authentication failed - incorrect username or password"
+        
+        # Step 8: Wait for user mode prompt ">"
+        print("Waiting for user prompt '>'...")
+        time.sleep(1)
+        user_prompt = receive_data(timeout=2)
+        output += user_prompt
+        print(f"User prompt: {repr(user_prompt[:100])}")
+        
+        # Step 9: Send "enable" command to enter privileged mode
         print("Sending 'enable' command...")
-        channel.send('enable\n')
+        send_data('enable')
         time.sleep(1)
         
-        # Step 8: Send enable password
-        print("Waiting for enable Password prompt...")
-        if not wait_and_send("password:", auth_password, timeout=10):
-            print("Warning: Enable password prompt not found, continuing...")
+        # Step 10: Wait for enable password prompt
+        print("Waiting for enable password prompt...")
+        enable_prompt = receive_data(timeout=3)
+        output += enable_prompt
+        print(f"Enable prompt: {repr(enable_prompt[:100])}")
         
-        # Step 9: Wait for enabled mode "#"
-        print("Waiting for enabled prompt '#'...")
+        # Step 11: Send enable password
+        print("Sending enable password")
+        send_data(auth_password)
         time.sleep(2)
-        enabled_prompt = ""
-        if channel.recv_ready():
-            enabled_prompt = channel.recv(4096).decode('utf-8', errors='ignore')
-            output += enabled_prompt
-            print(f"Enabled prompt: {repr(enabled_prompt)}")
         
-        # Verify we're in enabled mode
-        if '#' not in enabled_prompt and '#' not in output:
+        # Step 12: Read response after enable
+        enable_response = receive_data(timeout=3)
+        output += enable_response
+        print(f"Enable response: {repr(enable_response[:200])}")
+        
+        # Step 13: Verify we're in enabled mode (should see "#" prompt)
+        if '#' not in enable_response and '#' not in output:
             return False, "Failed to enter enabled mode. Check credentials."
         
-        # Step 10: Send the actual command
+        print("Successfully entered enabled mode!")
+        
+        # Step 14: Send the actual command
         print(f"Sending command: {command}")
-        channel.send(command + '\n')
-        time.sleep(4)  # Wait for command output
+        send_data(command)
+        time.sleep(4)  # Wait for command execution
         
-        # Step 11: Collect command output
-        while channel.recv_ready():
-            chunk = channel.recv(8192).decode('utf-8', errors='ignore')
+        # Step 15: Read command output with pagination handling
+        print("Reading command output (handling pagination)...")
+        command_output = ""
+        max_pages = 100  # Safety limit to prevent infinite loops
+        page_count = 0
+        
+        while page_count < max_pages:
+            # Read available data
+            chunk = receive_data(timeout=5)
             command_output += chunk
-            time.sleep(0.2)
+            
+            # Check for pagination prompts
+            if '--More--' in chunk or '-- More --' in chunk or 'More' in chunk:
+                print(f"Page {page_count + 1}: Found pagination prompt, sending space...")
+                # Send space to continue (space key is better than Enter for pagination)
+                sock.sendall(b" ")
+                time.sleep(1)
+                page_count += 1
+            else:
+                # No more pagination, break the loop
+                print("No more pagination found")
+                break
         
-        # Step 12: Send exit
-        channel.send('exit\n')
+        # Wait a bit more and read any remaining output
+        time.sleep(2)
+        additional_output = receive_data(timeout=2)
+        command_output += additional_output
+        
+        print(f"Command output length: {len(command_output)} characters")
+        print(f"Pages processed: {page_count}")
+        
+        # Step 16: Send exit command
+        print("Sending exit command...")
+        send_data('exit')
         time.sleep(0.5)
         
         # Get any remaining output
-        if channel.recv_ready():
-            command_output += channel.recv(8192).decode('utf-8', errors='ignore')
-        
-        print(f"Command output length: {len(command_output)}")
+        final_output = receive_data(timeout=1)
+        command_output += final_output
         
         if not command_output.strip():
             return False, "No output received from command"
         
-        # Clean output - remove command echo and prompts
+        # Clean output - remove command echo, prompts, and pagination artifacts
         lines = command_output.split('\n')
         clean_lines = []
-        skip_next = False
         
         for line in lines:
             line_lower = line.lower().strip()
-            # Skip lines containing the command itself, prompts, or login text
+            # Skip lines containing the command itself, prompts, pagination, or login text
             if (command.lower() in line_lower or 
                 line_lower.endswith('>') or 
                 line_lower.endswith('#') or
                 'login:' in line_lower or
+                'username:' in line_lower or
                 'password:' in line_lower or
-                line_lower == 'enable'):
+                '--more--' in line_lower or
+                '-- more --' in line_lower or
+                line_lower == 'enable' or
+                line_lower == 'exit'):
                 continue
-            if line.strip():  # Only include non-empty lines
-                clean_lines.append(line)
+            
+            # Remove ANSI escape codes (used for clearing --More-- prompts)
+            line_clean = line.replace('\x1b[K', '').replace('\x1b[?7h', '').replace('\x1b[?7l', '')
+            line_clean = line_clean.replace('\r', '').strip()
+            
+            if line_clean:  # Only include non-empty lines
+                clean_lines.append(line_clean)
         
         clean_output = '\n'.join(clean_lines).strip()
         
         print(f"Command executed successfully on {ip}")
         return True, clean_output if clean_output else command_output.strip()
 
-    except paramiko.AuthenticationException as e:
-        error_msg = f"Authentication failed for {ip}: {str(e)}"
-        print(error_msg)
-        return False, error_msg
-
-    except paramiko.SSHException as e:
-        error_msg = f"SSH connection failed to {ip}: {str(e)}"
-        print(error_msg)
-        return False, error_msg
-
     except socket.timeout:
         error_msg = f"Connection timeout to {ip}:{OLT_SSH_PORT}"
+        print(error_msg)
+        return False, error_msg
+
+    except socket.error as e:
+        error_msg = f"Socket error connecting to {ip}: {str(e)}"
         print(error_msg)
         return False, error_msg
 
@@ -406,10 +434,10 @@ def connect_to_olt(ip, command, username=None, password=None):
         return False, error_msg
 
     finally:
-        if ssh_client:
+        if sock:
             try:
-                ssh_client.close()
-                print(f"SSH connection to {ip} closed")
+                sock.close()
+                print(f"Telnet connection to {ip} closed")
             except:
                 pass
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OLT Custom Command Executor</title>
+    <title>OLT Custom Command Executor (Telnet)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -47,6 +47,20 @@
             font-size: 1.1em;
         }
 
+        .protocol-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 185, 129, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .content {
             padding: 40px;
         }
@@ -88,6 +102,25 @@
         .credentials-note ul {
             margin-top: 10px;
             margin-left: 20px;
+        }
+
+        .telnet-info {
+            background: #dbeafe;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+            margin-top: 15px;
+        }
+
+        .telnet-info h4 {
+            color: #1e40af;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .telnet-info p {
+            color: #1e3a8a;
+            line-height: 1.6;
         }
 
         .command-input-section {
@@ -451,11 +484,16 @@
             cursor: pointer;
             font-weight: 500;
             margin-top: 10px;
+            transition: all 0.3s ease;
         }
 
         .copy-all-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 15px rgba(5, 150, 105, 0.3);
+        }
+
+        .copy-all-btn.copied {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
 
         .signature {
@@ -479,8 +517,11 @@
             <a href="/" class="home-button">
                 <i class="fas fa-home"></i> Home
             </a>
+            <div class="protocol-badge">
+                <i class="fas fa-plug"></i> Telnet Port 23
+            </div>
             <h1><i class="fas fa-network-wired"></i> OLT Custom Command Executor</h1>
-            <p>Execute custom SSH commands on multiple OLT devices with automated login</p>
+            <p>Execute custom Telnet commands on multiple OLT devices with automated login</p>
         </div>
 
         <div class="content">
@@ -491,13 +532,20 @@
                     <div class="credentials-note">
                         <strong><i class="fas fa-lock"></i> Secure:</strong> All OLT authentication credentials are stored securely in the backend server environment variables.<br><br>
                         <strong><i class="fas fa-cog"></i> Configuration:</strong> OLT_USERNAME, OLT_PASSWORD, and OLT_SSH_PORT are loaded from your server's .env file.<br><br>
-                        <strong><i class="fas fa-info-circle"></i> Auto-Login Sequence:</strong>
+                        <strong><i class="fas fa-info-circle"></i> Auto-Login Sequence (Telnet):</strong>
                         <ul>
-                            <li>✓ SSH connection with credentials</li>
+                            <li>✓ Telnet connection on port 23</li>
                             <li>✓ Login prompt authentication</li>
                             <li>✓ Enable mode activation</li>
                             <li>✓ Command execution</li>
                         </ul>
+                    </div>
+                    
+                    <div class="telnet-info">
+                        <h4><i class="fas fa-info-circle"></i> Protocol Information</h4>
+                        <p><strong>Protocol:</strong> Telnet<br>
+                        <strong>Port:</strong> 23 (configured in .env as OLT_SSH_PORT)<br>
+                        <strong>Note:</strong> Telnet is an unencrypted protocol. Ensure your network is secure.</p>
                     </div>
                 </div>
             </div>
@@ -552,7 +600,7 @@
                 
                 <div class="loading hidden" id="executionLoading">
                     <div class="spinner"></div>
-                    <p>Executing commands...</p>
+                    <p>Executing commands via Telnet...</p>
                     <div class="progress-bar">
                         <div class="progress-fill" id="progressFill" style="width: 0%"></div>
                     </div>
@@ -609,6 +657,7 @@
                     <h3>${device.name || device.ip}</h3>
                     <p><strong>IP:</strong> ${device.ip}</p>
                     <p><strong>Location:</strong> ${device.location || 'N/A'}</p>
+                    <p><strong>Protocol:</strong> <span style="color: #10b981; font-weight: 600;">Telnet:23</span></p>
                 `;
                 
                 card.addEventListener('click', (e) => {
@@ -703,13 +752,14 @@
                     executionResults.push({
                         device: device,
                         success: result.success,
-                        output: result.output || result.error,
+                        output: result.output || result.error || 'No output received',
                         error: result.error
                     });
                 } catch (error) {
                     executionResults.push({
                         device: device,
                         success: false,
+                        output: '',
                         error: error.message
                     });
                 }
@@ -732,10 +782,11 @@
             const summary = document.createElement('div');
             summary.className = 'success';
             summary.innerHTML = `
-                <h3>Summary</h3>
+                <h3><i class="fas fa-check-circle"></i> Execution Summary</h3>
                 <p><strong>Total:</strong> ${executionResults.length} | <strong>Success:</strong> ${successCount} | <strong>Failed:</strong> ${executionResults.length - successCount}</p>
-                <button class="copy-all-btn" onclick="copyAllOutputs()">Copy All</button>
-            `;
+                <p style="margin-top: 10px;"><i class="fas fa-plug"></i> Protocol: Telnet (Port 23)</p>
+                <button class="copy-all-btn" onclick="copyAllOutputs(event)"><i class="fas fa-copy"></i> Copy All Outputs</button>
+                `;
             container.appendChild(summary);
             
             executionResults.forEach(result => {
@@ -745,17 +796,19 @@
                 const header = document.createElement('div');
                 header.className = 'device-result-header';
                 header.innerHTML = `
-                    <h4>${result.device.name || result.device.ip}</h4>
-                    <span class="result-status ${result.success ? 'success' : 'error'}">${result.success ? 'Success' : 'Failed'}</span>
+                    <h4><i class="fas fa-server"></i> ${result.device.name || result.device.ip}</h4>
+                    <span class="result-status ${result.success ? 'success' : 'error'}">
+                        <i class="fas fa-${result.success ? 'check' : 'times'}-circle"></i> ${result.success ? 'Success' : 'Failed'}
+                    </span>
                 `;
                 
                 const outputId = `output-${Math.random().toString(36).substr(2, 9)}`;
                 const content = document.createElement('div');
                 
                 if (result.success) {
-                    content.innerHTML = `<div class="command-output" id="${outputId}">${result.output}<button class="copy-btn" onclick="copyOutput('${outputId}')">Copy</button></div>`;
+                    content.innerHTML = `<div class="command-output" id="${outputId}">${result.output}<button class="copy-btn" onclick="copyOutput('${outputId}')"><i class="fas fa-copy"></i> Copy</button></div>`;
                 } else {
-                    content.innerHTML = `<div class="error">${result.error}</div>`;
+                    content.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> ${result.error}</div>`;
                 }
                 
                 div.appendChild(header);
@@ -765,30 +818,111 @@
         }
 
         function copyOutput(outputId) {
-            const el = document.getElementById(outputId);
-            const btn = el.querySelector('.copy-btn');
-            const text = el.textContent.replace('Copy', '').trim();
-            
-            navigator.clipboard.writeText(text).then(() => {
-                btn.textContent = 'Copied!';
-                btn.classList.add('copied');
-                setTimeout(() => {
-                    btn.textContent = 'Copy';
-                    btn.classList.remove('copied');
-                }, 2000);
-            });
+    const el = document.getElementById(outputId);
+    const btn = el.querySelector('.copy-btn');
+    const text = el.textContent.replace(/Copy|✓ Copied!/g, '').trim();
+    
+    // Fallback copy function
+    function fallbackCopy(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return successful;
+        } catch (err) {
+            document.body.removeChild(textArea);
+            return false;
         }
+    }
+    
+    const copyPromise = navigator.clipboard && navigator.clipboard.writeText
+        ? navigator.clipboard.writeText(text)
+        : Promise.resolve(fallbackCopy(text) ? text : Promise.reject('Copy failed'));
+    
+    copyPromise.then(() => {
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+            btn.innerHTML = '<i class="fas fa-copy"></i> Copy';
+            btn.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        console.error('Copy failed:', err);
+        alert('Copy failed. Please select and copy manually.');
+    });
+}
 
-        function copyAllOutputs() {
-            const all = executionResults
-                .filter(r => r.success)
-                .map(r => `=== ${r.device.name || r.device.ip} ===\n${r.output}`)
-                .join('\n\n');
-            
-            navigator.clipboard.writeText(all).then(() => {
-                alert('All outputs copied!');
-            });
+        function copyAllOutputs(event) {
+    const allOutputs = executionResults
+        .filter(r => r.success)
+        .map(r => {
+            const deviceName = r.device.name || r.device.ip;
+            const separator = '='.repeat(deviceName.length + 8);
+            return `${separator}\n=== ${deviceName} ===\n${separator}\n${r.output}\n`;
+        })
+        .join('\n');
+    
+    if (!allOutputs || allOutputs.trim() === '') {
+        alert('No outputs to copy!');
+        return;
+    }
+    
+    // Fallback method for clipboard copy
+    function fallbackCopy(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            return successful;
+        } catch (err) {
+            document.body.removeChild(textArea);
+            return false;
         }
+    }
+    
+    // Try modern clipboard API first, fallback to execCommand
+    const copyPromise = navigator.clipboard && navigator.clipboard.writeText 
+        ? navigator.clipboard.writeText(allOutputs)
+        : Promise.resolve(fallbackCopy(allOutputs) ? allOutputs : Promise.reject('Copy failed'));
+    
+    copyPromise.then(() => {
+        const btn = event ? event.target.closest('.copy-all-btn') : document.querySelector('.copy-all-btn');
+        if (btn) {
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> All Outputs Copied!';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+                btn.classList.remove('copied');
+            }, 2000);
+        } else {
+            alert('All outputs copied to clipboard!');
+        }
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        
+        // Last resort - show the text in a modal/prompt
+        if (confirm('Automatic copy failed. Click OK to see the output in a popup (you can manually copy from there).')) {
+            const popup = window.open('', 'Output', 'width=800,height=600');
+            popup.document.write('<pre style="font-family: monospace; padding: 20px;">' + allOutputs.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</pre>');
+        }
+    });
+}
 
         document.addEventListener('DOMContentLoaded', () => {
             loadDevices();

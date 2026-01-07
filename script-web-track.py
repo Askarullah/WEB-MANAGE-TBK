@@ -37,6 +37,10 @@ MIKROTIK_SSH_PORT = int(os.getenv('MIKROTIK_SSH_PORT'))
 MIKROTIK_USERNAME = os.getenv('MIKROTIK_USERNAME')
 MIKROTIK_PASSWORD = os.getenv('MIKROTIK_PASSWORD')
 
+OLT_SSH_PORT = int(os.getenv('OLT_SSH_PORT', '22'))
+OLT_USERNAME = os.getenv('OLT_USERNAME')
+OLT_PASSWORD = os.getenv('OLT_PASSWORD')
+
 # ============================================================================
 # MikroTik Authentication and SSH Connection Management
 # ============================================================================
@@ -209,7 +213,205 @@ def connect_to_mikrotik(ip, command, username=None, password=None):
                 ssh_client.close()
                 print(f"SSH connection to {ip} closed")
             except:
-                pass  # Ignore errors during cleanup
+                pass
+
+def connect_to_olt(ip, command, username=None, password=None):
+    """
+    Connect to OLT device with full login sequence
+    """
+    ssh_client = None
+    auth_username = username if username else OLT_USERNAME
+    auth_password = password if password else OLT_PASSWORD
+
+    if not auth_username or not auth_password:
+        return False, "OLT credentials are not configured"
+
+    try:
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.load_system_host_keys()
+
+        print(f"Connecting to OLT {ip}...")
+        
+        # Step 1: SSH Connection
+        ssh_client.connect(
+            hostname=ip,
+            username=auth_username,
+            password=auth_password,
+            port=OLT_SSH_PORT,
+            timeout=30,
+            auth_timeout=30,
+            banner_timeout=30,
+            look_for_keys=False,
+            allow_agent=False,
+            compress=False
+        )
+
+        print(f"SSH connected to {ip}, starting interactive shell...")
+        
+        # Step 2: Open interactive shell
+        channel = ssh_client.invoke_shell()
+        channel.settimeout(10)
+        
+        output = ""
+        command_output = ""
+        
+        # Helper function to wait for text and send response
+        def wait_and_send(expected_text, send_text, timeout=8):
+            nonlocal output
+            import time
+            buffer = ""
+            start_time = time.time()
+            
+            while time.time() - start_time < timeout:
+                if channel.recv_ready():
+                    chunk = channel.recv(4096).decode('utf-8', errors='ignore')
+                    buffer += chunk
+                    output += chunk
+                    print(f"Received: {repr(chunk[:100])}")  # Debug output
+                    
+                    # Check for expected text (case insensitive, strip whitespace)
+                    if expected_text.lower() in buffer.lower():
+                        print(f"Found '{expected_text}', sending: {send_text if send_text != auth_password else '***'}")
+                        channel.send(send_text + '\n')
+                        time.sleep(0.8)  # Wait for response
+                        return True
+                
+                time.sleep(0.1)
+            
+            print(f"Timeout waiting for: {expected_text}")
+            print(f"Buffer content: {repr(buffer)}")
+            return False
+        
+        # Step 3: Wait for initial banner
+        import time
+        time.sleep(3)  # Give more time for banner
+        if channel.recv_ready():
+            initial = channel.recv(8192).decode('utf-8', errors='ignore')
+            output += initial
+            print(f"Initial banner:\n{initial}")
+        
+        # Step 4: Send username at Login prompt
+        print("Waiting for Login prompt...")
+        if not wait_and_send("login:", auth_username, timeout=10):
+            # Try sending username anyway
+            print("Sending username anyway...")
+            channel.send(auth_username + '\n')
+            time.sleep(1)
+        
+        # Step 5: Send password at Password prompt
+        print("Waiting for Password prompt...")
+        if not wait_and_send("password:", auth_password, timeout=10):
+            return False, "Login password prompt not found or timeout"
+        
+        # Step 6: Wait for user mode prompt ">"
+        print("Waiting for user prompt '>'...")
+        time.sleep(2)
+        user_prompt = ""
+        if channel.recv_ready():
+            user_prompt = channel.recv(4096).decode('utf-8', errors='ignore')
+            output += user_prompt
+            print(f"User prompt: {repr(user_prompt)}")
+        
+        # Step 7: Send "enable" command
+        print("Sending 'enable' command...")
+        channel.send('enable\n')
+        time.sleep(1)
+        
+        # Step 8: Send enable password
+        print("Waiting for enable Password prompt...")
+        if not wait_and_send("password:", auth_password, timeout=10):
+            print("Warning: Enable password prompt not found, continuing...")
+        
+        # Step 9: Wait for enabled mode "#"
+        print("Waiting for enabled prompt '#'...")
+        time.sleep(2)
+        enabled_prompt = ""
+        if channel.recv_ready():
+            enabled_prompt = channel.recv(4096).decode('utf-8', errors='ignore')
+            output += enabled_prompt
+            print(f"Enabled prompt: {repr(enabled_prompt)}")
+        
+        # Verify we're in enabled mode
+        if '#' not in enabled_prompt and '#' not in output:
+            return False, "Failed to enter enabled mode. Check credentials."
+        
+        # Step 10: Send the actual command
+        print(f"Sending command: {command}")
+        channel.send(command + '\n')
+        time.sleep(4)  # Wait for command output
+        
+        # Step 11: Collect command output
+        while channel.recv_ready():
+            chunk = channel.recv(8192).decode('utf-8', errors='ignore')
+            command_output += chunk
+            time.sleep(0.2)
+        
+        # Step 12: Send exit
+        channel.send('exit\n')
+        time.sleep(0.5)
+        
+        # Get any remaining output
+        if channel.recv_ready():
+            command_output += channel.recv(8192).decode('utf-8', errors='ignore')
+        
+        print(f"Command output length: {len(command_output)}")
+        
+        if not command_output.strip():
+            return False, "No output received from command"
+        
+        # Clean output - remove command echo and prompts
+        lines = command_output.split('\n')
+        clean_lines = []
+        skip_next = False
+        
+        for line in lines:
+            line_lower = line.lower().strip()
+            # Skip lines containing the command itself, prompts, or login text
+            if (command.lower() in line_lower or 
+                line_lower.endswith('>') or 
+                line_lower.endswith('#') or
+                'login:' in line_lower or
+                'password:' in line_lower or
+                line_lower == 'enable'):
+                continue
+            if line.strip():  # Only include non-empty lines
+                clean_lines.append(line)
+        
+        clean_output = '\n'.join(clean_lines).strip()
+        
+        print(f"Command executed successfully on {ip}")
+        return True, clean_output if clean_output else command_output.strip()
+
+    except paramiko.AuthenticationException as e:
+        error_msg = f"Authentication failed for {ip}: {str(e)}"
+        print(error_msg)
+        return False, error_msg
+
+    except paramiko.SSHException as e:
+        error_msg = f"SSH connection failed to {ip}: {str(e)}"
+        print(error_msg)
+        return False, error_msg
+
+    except socket.timeout:
+        error_msg = f"Connection timeout to {ip}:{OLT_SSH_PORT}"
+        print(error_msg)
+        return False, error_msg
+
+    except Exception as e:
+        error_msg = f"Unexpected error connecting to {ip}: {str(e)}"
+        print(error_msg)
+        import traceback
+        print(traceback.format_exc())
+        return False, error_msg
+
+    finally:
+        if ssh_client:
+            try:
+                ssh_client.close()
+                print(f"SSH connection to {ip} closed")
+            except:
+                pass
 
 def parse_mikrotik_firewall_output(output):
     """
@@ -327,6 +529,19 @@ def load_devices_suspend():
             return []
     except Exception as e:
         print(f"Error loading devices: {e}")
+        return []
+
+def load_devices_olt():
+    try:
+        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices-olt.json')
+        if os.path.exists(devices_file):
+            with open(devices_file, 'r') as f:
+                devices = json.load(f)
+            return devices
+        print("Warning: devices-olt.json not found. Using empty device list.")
+        return []
+    except Exception as e:
+        print(f"Error loading OLT devices: {e}")
         return []
 
 # ============================================================================
@@ -447,6 +662,10 @@ def all_olt_parser():
 def custom_command():
     """Route for the Custom Command Executor page"""
     return render_template('custom-command.html')
+
+@app.route('/custom-olt-command.html')
+def custom_olt_command():
+    return render_template('custom-olt-command.html')
 
 @app.route('/address-list-parser.html')
 def address_list_parser():
@@ -1038,6 +1257,51 @@ def execute_custom_command():
             'error': f'Server error: {str(e)}',
             'timestamp': datetime.now().isoformat()
         }), 500
+
+@app.route('/api/olt/execute-custom-command', methods=['POST'])
+def execute_olt_custom_command():
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        ip = data.get('ip')
+        command = data.get('command')
+        username = data.get('username')
+        password = data.get('password')
+
+        if not ip:
+            return jsonify({'error': 'IP address is required'}), 400
+
+        if not command:
+            return jsonify({'error': 'Command is required'}), 400
+
+        success, output = connect_to_olt(ip, command, username, password)
+
+        if success:
+            return jsonify({
+                'success': True,
+                'device_ip': ip,
+                'command': command,
+                'output': output,
+                'timestamp': datetime.now().isoformat()
+            })
+
+        return jsonify({
+            'success': False,
+            'device_ip': ip,
+            'command': command,
+            'error': output,
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Server error: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
         
 @app.route('/api/mikrotik/batch-status-check', methods=['POST'])
 def batch_status_check():
@@ -1223,6 +1487,11 @@ def get_devices_suspend():
     Get list of available MikroTik devices from JSON file
     """
     devices = load_devices_suspend()
+    return jsonify({'devices': devices})
+
+@app.route('/api/devices-olt', methods=['GET'])
+def get_devices_olt():
+    devices = load_devices_olt()
     return jsonify({'devices': devices})
 
 

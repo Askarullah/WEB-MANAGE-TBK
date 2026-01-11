@@ -22,7 +22,6 @@
             padding: 20px;
         }
 
-        /* Simplified background */
         body::before {
             content: '';
             position: fixed;
@@ -50,7 +49,6 @@
             overflow: hidden;
         }
 
-        /* Simplified header */
         .header {
             background: linear-gradient(135deg, 
                 rgba(76, 175, 80, 0.8) 0%, 
@@ -216,6 +214,8 @@
             border-radius: 12px;
             color: white;
             box-shadow: 0 4px 16px rgba(76, 175, 80, 0.2);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .stat-item {
@@ -333,8 +333,8 @@
             
             <div class="sample-data">
                 <strong>Sample Data Format:</strong><br>
-                0/2/1:1HRS04-SI-BK000598-Puryantid4:b1:06:2c:79:21other type171525/07/30 13:09:31V1.3.10.053Normal<br>
-                0/2/1:2HRS04-SI-BK003365-Tiwi Erlia48:35:2e:45:b9:68other type163625/08/10 22:05:58V3.4.00-230831Normal
+                EPON0/2:1 27 online d4:b1:06:31:3a:7c 894 AZM03-MUHAMMAD_NUH_SI-BK0016771GE+3FE+1POTS+WiFi<br>
+                EPON0/2:2 7 online 48:35:2e:44:a3:d8 795 AZM02-TEGUH_AFRINAL_SI-BK0028001GE+1FE+4WiFi
             </div>
             <button class="load-sample-btn" onclick="loadSampleData()">📋 Load Sample Data</button>
         </div>
@@ -354,6 +354,7 @@
             <table id="resultsTable">
                 <thead>
                     <tr>
+                        <th>ODP ID</th>
                         <th>CSID</th>
                         <th>MAC Address</th>
                     </tr>
@@ -383,25 +384,37 @@
             // Split the text into lines and skip empty lines
             const lines = rawData.split('\n').filter(line => line.trim() !== '');
             
-            // Skip header line if it looks like a header
-            const dataLines = lines[0].toLowerCase().includes('description') ? lines.slice(1) : lines;
+            // Skip header lines (lines with dashes or header keywords)
+            const dataLines = lines.filter(line => {
+                const lower = line.toLowerCase();
+                return !lower.includes('onu-id') && 
+                       !lower.includes('description') && 
+                       !line.includes('------') &&
+                       line.trim().length > 0;
+            });
             
             // Regular expressions for pattern matching
             const csidPattern = /SI-BK\d{6}/;
             const macPattern = /([0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2})/i;
+            const odpPattern = /([A-Z]{3,5}\d{2})[-_]/;
             
             parsedData = [];
             
-            dataLines.forEach((line, index) => {
-                // Extract CSID
-                const csidMatch = line.match(csidPattern);
-                const csid = csidMatch ? csidMatch[0] : 'Not Found';
-                
+            dataLines.forEach((line) => {
                 // Extract MAC Address
                 const macMatch = line.match(macPattern);
                 const macAddress = macMatch ? macMatch[1] : 'Not Found';
                 
+                // Extract CSID
+                const csidMatch = line.match(csidPattern);
+                const csid = csidMatch ? csidMatch[0] : 'Not Found';
+                
+                // Extract ODP ID
+                const odpMatch = line.match(odpPattern);
+                const odpId = odpMatch ? odpMatch[1] : 'Not Found';
+                
                 parsedData.push({
+                    odpId: odpId,
                     csid: csid,
                     macAddress: macAddress
                 });
@@ -420,6 +433,7 @@
             
             // Calculate statistics
             const totalRecords = parsedData.length;
+            const validODP = parsedData.filter(item => item.odpId !== 'Not Found').length;
             const validCSID = parsedData.filter(item => item.csid !== 'Not Found').length;
             const validMAC = parsedData.filter(item => item.macAddress !== 'Not Found').length;
             
@@ -428,6 +442,10 @@
                 <div class="stat-item">
                     <span class="stat-number">${totalRecords}</span>
                     <span class="stat-label">Total Records</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">${validODP}</span>
+                    <span class="stat-label">Valid ODP IDs</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number">${validCSID}</span>
@@ -440,15 +458,20 @@
             `;
             
             // Populate table
-            parsedData.forEach((item, index) => {
+            parsedData.forEach((item) => {
                 const row = tableBody.insertRow();
-                const csidCell = row.insertCell(0);
-                const macCell = row.insertCell(1);
+                const odpCell = row.insertCell(0);
+                const csidCell = row.insertCell(1);
+                const macCell = row.insertCell(2);
                 
+                odpCell.textContent = item.odpId;
                 csidCell.textContent = item.csid;
                 macCell.textContent = item.macAddress;
                 
                 // Style "Not Found" entries
+                if (item.odpId === 'Not Found') {
+                    odpCell.classList.add('not-found');
+                }
                 if (item.csid === 'Not Found') {
                     csidCell.classList.add('not-found');
                 }
@@ -461,13 +484,13 @@
         }
 
         function loadSampleData() {
-            const sampleData = `ONUONU DescriptionMAC AddressTypeDistance(m)Register TimeSoftwareStatus
-0/2/1:1HRS04-SI-BK000598-Puryantid4:b1:06:2c:79:21other type171525/07/30 13:09:31V1.3.10.053Normal
-0/2/1:2HRS04-SI-BK003365-Tiwi Erlia48:35:2e:45:b9:68other type163625/08/10 22:05:58V3.4.00-230831Normal
-0/2/1:3HRS04-SI-BK000292-Antoni Sugandad4:b1:06:79:c7:3cother type152025/08/17 23:36:14V1.3.10.053Normal
-0/2/1:4HRS02-SI-BK001658-Muhammad Suhard4:b1:06:08:56:42other type148925/08/05 10:34:10V1.3.10.053Normal
-0/2/1:5d4:b1:06:87:71:68other type133925/08/09 12:10:35V1.3.10.053Normal
-0/2/1:9HRS01-SI-BK000284-Syafril Halidd4:b1:06:86:3e:76other type156025/08/10 10:34:02V1.3.10.053Normal`;
+            const sampleData = `ONU-ID	LLID	Status	MAC	Address	RTT(TQ)	Description	Type	Authflag	Exchange	Auth	Mode	Loid/Pwd
+------	----	------	------------	-------	-----------	----	--------	--------	---------	--------		
+EPON0/2:1	27	online	d4:b1:06:31:3a:7c	894	AZM03-MUHAMMAD_NUH_SI-BK0016771GE+3FE+1POTS+WiFi	N:N:Auth	Finish	None				
+EPON0/2:2	7	online	48:35:2e:44:a3:d8	795	AZM02-TEGUH_AFRINAL_SI-BK0028001GE+1FE+4WiFi	P:K:Auth	Finish	None				
+EPON0/2:3	2	online	48:35:2e:46:12:28	1021	AZM01-SYLVIA_EVNI_DE_SI-BK0030131GE+1FE+4WiFi	P:K:Auth	Finish	None	
+EPON0/4:29	28	online	d4:b1:06:85:a3:9e	1406	BSR09-ENI_NURSANTI_SI-BK0017451GE+3FE+1POTS+WiFi	N:N:Auth	Finish	None
+EPON0/4:30	39	online	d4:b1:06:a3:60:7a	1603	BSR11-YULIANA_SUSANT_SI-BK0020671GE+3FE+1POTS+WiFi	N:N:Auth	Finish	None`;
             
             document.getElementById('rawData').value = sampleData;
         }
@@ -484,9 +507,9 @@
                 return;
             }
 
-            let csvContent = 'CSID,MAC Address\n';
+            let csvContent = 'ODP ID,CSID,MAC Address\n';
             parsedData.forEach(item => {
-                csvContent += `${item.csid},${item.macAddress}\n`;
+                csvContent += `${item.odpId},${item.csid},${item.macAddress}\n`;
             });
 
             const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -506,9 +529,9 @@
                 return;
             }
 
-            let textContent = 'CSID\tMAC Address\n';
+            let textContent = 'ODP ID\tCSID\tMAC Address\n';
             parsedData.forEach(item => {
-                textContent += `${item.csid}\t${item.macAddress}\n`;
+                textContent += `${item.odpId}\t${item.csid}\t${item.macAddress}\n`;
             });
 
             navigator.clipboard.writeText(textContent).then(() => {

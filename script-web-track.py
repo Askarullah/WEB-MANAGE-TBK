@@ -445,7 +445,7 @@ def parse_mikrotik_firewall_output(output):
     """
     Parse MikroTik firewall address-list output into structured data.
     Extracts CSID, IP addresses, and timestamps from RouterOS firewall output.
-    Uses the same logic as extract-suspend route for consistency.
+    Handles both date formats: 'jul/06/2025 15:54:12' and '2025-12-06 15:12:13'
     
     Args:
         output (str): Raw output from MikroTik firewall address-list command
@@ -470,8 +470,13 @@ def parse_mikrotik_firewall_output(output):
         if ip_match:
             ip = ip_match.group()
             
-            # Extract date if present in the line
+            # Extract date - handle both formats
+            # Format 1: jul/06/2025 15:54:12
             date_match = re.search(r'(\w{3}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2})', line)
+            if not date_match:
+                # Format 2: 2025-12-06 15:12:13
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})', line)
+            
             date_added = date_match.group(1) if date_match else 'N/A'
             
             # Create entry

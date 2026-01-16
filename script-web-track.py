@@ -921,6 +921,69 @@ def search_ip():
     
     return jsonify(results)
 
+@app.route('/find-odp', methods=['POST'])
+def find_odp():
+    csid_input = request.form.get('csid')
+    file = request.files['file']
+    
+    # Parse multiple CSIDs - split by newlines, commas, or semicolons
+    csids = []
+    if csid_input:
+        # Split by various delimiters and clean up
+        csid_list = re.split(r'[,;\n\r]+', csid_input.strip())
+        csids = [csid.strip() for csid in csid_list if csid.strip()]
+    
+    if not csids:
+        return jsonify({'error': 'Please provide at least one CSID'})
+    
+    wb = openpyxl.load_workbook(file)
+    
+    # Build the lookup table first by scanning all sheets once
+    odp_map = {}  # Dictionary: csid -> {'odp': odp_id, 'sheet': sheet_name}
+    
+    # Single pass through all sheets to build the lookup map
+    for sheet_name in wb.sheetnames:
+        if sheet_name == "TRACK ODP":
+            continue
+        ws = wb[sheet_name]
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if len(row) > 2 and row[2]:  # Check if CSID column has value
+                row_csid = str(row[2]).strip()
+                if row_csid:  # Only add non-empty CSIDs
+                    odp_map[row_csid] = {
+                        'odp': row[0] if len(row) > 0 and row[0] else 'N/A',
+                        'sheet': sheet_name
+                    }
+    
+    # Fast O(1) lookup for each searched CSID
+    results = []
+    found_csids = set()
+    
+    for search_csid in csids:
+        if search_csid in odp_map:
+            # Found the CSID
+            data = odp_map[search_csid]
+            results.append({
+                'csid': search_csid,
+                'odp': data['odp'],
+                'sheet': data['sheet']
+            })
+            found_csids.add(search_csid)
+    
+    # Add entries for CSIDs that were not found
+    not_found_csids = set(csids) - found_csids
+    for csid in not_found_csids:
+        results.append({
+            'csid': csid,
+            'odp': 'Not Found',
+            'sheet': 'N/A'
+        })
+    
+    # Sort results to show found ones first, then not found
+    results.sort(key=lambda x: (x['odp'] == 'Not Found', x['csid']))
+    
+    return jsonify(results)
+
 # ============================================================================
 #       Flask Routes - PARSING CSID LOGIC
 # ============================================================================

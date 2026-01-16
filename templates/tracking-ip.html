@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TRACKING IP PELANGGAN</title>
+    <title>TRACKING IP & ODP PELANGGAN</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -22,7 +22,6 @@
         position: relative;
       }
 
-      /* Animated background particles */
       body::before {
         content: '';
         position: fixed;
@@ -59,7 +58,6 @@
         overflow: hidden;
       }
 
-      /* Glassmorphism header */
       .header {
         background: linear-gradient(135deg, 
           rgba(76, 175, 80, 0.9) 0%, 
@@ -109,7 +107,6 @@
         text-transform: uppercase;
       }
 
-      /* Stylish Home Button */
       .home-button {
         position: absolute;
         top: 15px;
@@ -152,7 +149,6 @@
         padding: 50px 40px;
       }
 
-      /* Glass card components */
       .glass-card {
         background: rgba(255, 255, 255, 0.4);
         backdrop-filter: blur(20px);
@@ -179,7 +175,6 @@
         color: #4CAF50;
       }
 
-      /* Upload zone styling */
       .upload-zone {
         border: 3px dashed rgba(76, 175, 80, 0.3);
         border-radius: 20px;
@@ -210,18 +205,6 @@
         margin: 20px 0;
         border-left: 5px solid #4CAF50;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-      }
-
-      .search-section {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 24px;
-        padding: 30px;
-        margin: 20px 0;
-        box-shadow: 
-          0 20px 40px rgba(0, 0, 0, 0.1),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2);
       }
 
       .results-table {
@@ -278,12 +261,6 @@
 
       .table tbody tr:hover {
         background-color: rgba(255, 255, 255, 0.2);
-      }
-
-      .border-dashed {
-        border: 3px dashed rgba(76, 175, 80, 0.3);
-        border-radius: 20px;
-        transition: all 0.3s ease;
       }
 
       .progress {
@@ -346,6 +323,23 @@
         box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
       }
 
+      .btn-info {
+        background: linear-gradient(45deg, #00bcd4, #0097a7);
+        border: none;
+        color: white;
+        border-radius: 10px;
+        padding: 12px 24px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .btn-info:hover {
+        background: linear-gradient(45deg, #0097a7, #00838f);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 188, 212, 0.4);
+      }
+
       .btn-custom {
         border-radius: 10px;
         padding: 10px 20px;
@@ -400,7 +394,6 @@
         font-size: 1.15rem;
       }
 
-      /* Summary Statistics Styling */
       .summary-stat {
         background: rgba(255, 255, 255, 0.3);
         backdrop-filter: blur(15px);
@@ -447,7 +440,6 @@
         letter-spacing: 0.5px;
       }
 
-      /* Responsive adjustments */
       @media (max-width: 768px) {
         .home-button {
           position: static;
@@ -473,13 +465,12 @@
 <body>
     <div class="container-fluid p-4">
         <div class="main-container">
-            <!-- Header -->
             <div class="header">
                 <a href="/" class="home-button">
                     <i class="fas fa-home"></i>
                     <span>Home</span>
                 </a>
-                <h1><i class="fas fa-search"></i> TRACKING IP PELANGGAN</h1>
+                <h1><i class="fas fa-search"></i> TRACKING IP & ODP PELANGGAN</h1>
                 <p class="mb-0">TG BALAI KARIMUN</p>
             </div>
 
@@ -499,7 +490,6 @@
                                 </button>
                             </div>
 
-                            <!-- Status Card -->
                             <div class="status-card alert alert-dismissible fade mt-3 d-none" id="uploadStatus" role="alert">
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                                 <div class="d-flex align-items-center">
@@ -513,24 +503,29 @@
 
                 <!-- Search Section -->
                 <div class="glass-card">
-                    <h4 class="section-title"><i class="fas fa-search"></i>Search IP Address</h4>
+                    <h4 class="section-title"><i class="fas fa-search"></i>Search IP Address or ODP</h4>
                     <div class="input-group mb-3">
-                      <textarea id="csidInput" class="form-control" rows="4" placeholder="Paste CSID disini 
+                        <textarea id="csidInput" class="form-control" rows="4" placeholder="Paste CSID disini 
 contoh:
 SI-BK006976
 SI-BK006932
 SI-BK005865"></textarea>
-                        <button class="btn btn-primary" onclick="searchIP()">
-                            <i class="fas fa-search me-2"></i>Search IP
-                        </button>
+                        <div class="d-flex flex-column gap-2">
+                            <button class="btn btn-primary" onclick="searchIP()">
+                                <i class="fas fa-network-wired me-2"></i>Search IP
+                            </button>
+                            <button class="btn btn-info" onclick="searchODP()">
+                                <i class="fas fa-project-diagram me-2"></i>Search ODP
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- Management Buttons -->
                     <div class="d-flex flex-wrap gap-2 mb-3">
-                        <button class="btn btn-custom btn-outline-secondary" id="clearInputBtn" onclick="clearInput()">
+                        <button class="btn btn-custom btn-outline-secondary" onclick="clearInput()">
                             <i class="fas fa-eraser me-2"></i>Clear Input
                         </button>
-                        <button class="btn btn-custom btn-outline-warning" id="clearResultsBtn" onclick="clearResults()">
+                        <button class="btn btn-custom btn-outline-warning" onclick="clearResults()">
                             <i class="fas fa-broom me-2"></i>Clear Results
                         </button>
                     </div>
@@ -538,11 +533,11 @@ SI-BK005865"></textarea>
                     <!-- Progress Bar -->
                     <div id="searchProgress" class="mt-2 mb-3 d-none">
                         <div class="progress mb-2">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
                         </div>
                         <div class="text-center">
                             <i class="fas fa-spinner fa-spin me-2"></i>
-                            <span class="text-primary fw-bold">Searching...</span>
+                            <span class="text-primary fw-bold" id="searchText">Searching...</span>
                         </div>
                     </div>
                 </div>
@@ -592,15 +587,13 @@ SI-BK005865"></textarea>
                     <table class="table table-striped mb-0">
                         <thead>
                             <tr>
-                                <th>
-                                    <i class="fas fa-list-ol me-2"></i>No
-                                </th>
+                                <th><i class="fas fa-list-ol me-2"></i>No</th>
                                 <th onclick="sortTable(1)" title="Click to sort by CSID">
                                     <i class="fas fa-id-card me-2"></i>CSID
                                     <i class="fas fa-sort sort-icon" id="sort-1"></i>
                                 </th>
-                                <th onclick="sortTable(2)" title="Click to sort by IP Address">
-                                    <i class="fas fa-network-wired me-2"></i>IP Address
+                                <th onclick="sortTable(2)" title="Click to sort by Result">
+                                    <i class="fas fa-info-circle me-2"></i><span id="resultHeader">Result</span>
                                     <i class="fas fa-sort sort-icon" id="sort-2"></i>
                                 </th>
                             </tr>
@@ -616,10 +609,10 @@ SI-BK005865"></textarea>
                     </table>
                 </div>
             </div>
-            <!-- Premium Signature -->
-        <div class="signature">
-          <i class="fas fa-code"></i> Crafted by <span class="developer-name">Holil Askarullah</span>
-        </div>
+            
+            <div class="signature">
+                <i class="fas fa-code"></i> Crafted by <span class="developer-name">Holil Askarullah</span>
+            </div>
         </div>
     </div>
 
@@ -629,8 +622,8 @@ SI-BK005865"></textarea>
         let fileLoaded = false;
         let currentSort = { column: -1, direction: 'asc' };
         let tableData = [];
+        let searchType = 'ip'; // Track current search type
 
-        // Drag and drop handlers
         function handleDragOver(e) {
             e.preventDefault();
             e.stopPropagation();
@@ -654,7 +647,6 @@ SI-BK005865"></textarea>
             }
         }
 
-        // File input change handler
         document.getElementById('excelFile').addEventListener('change', function(e) {
             if(this.files[0]) {
                 updateFileStatus(this.files[0]);
@@ -680,105 +672,111 @@ SI-BK005865"></textarea>
             statusCard.querySelector('i').className = 'fas fa-check-circle text-success me-3';
         }
 
-        //FUNCTION THAT TRIGGERS SEARCH IP BUTTON
         function searchIP() {
-    const fileInput = document.getElementById('excelFile');
-    const csid = document.getElementById('csidInput').value;
-    const searchProgress = document.getElementById('searchProgress');
-    const resultsBody = document.getElementById('resultsBody');
-    const summarySection = document.getElementById('summarySection');
-    
-    if (!fileLoaded) {
-        alert('Please upload an Excel file first');
-        return;
-    }
-    
-    if (!csid.trim()) {
-        alert('Please enter at least one CSID');
-        return;
-    }
-    
-    // Hide summary section during search
-    summarySection.classList.add('d-none');
-    
-    // Show progress indicator
-    searchProgress.classList.remove('d-none');
-    
-    const formData = new FormData();
-    formData.append('file', fileInput.files[0]);
-    formData.append('csid', csid);
-
-    fetch('/search-ip', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        searchProgress.classList.add('d-none');
-        resultsBody.innerHTML = '';
-        
-        if (data.length > 0) {
-            // Calculate summary statistics
-            const inputCSIDs = csid.trim().split('\n').filter(line => line.trim() !== '');
-            const totalInput = inputCSIDs.length;
-            const foundCount = data.filter(item => item.ip !== 'Not Found').length;
-            const notFoundCount = data.filter(item => item.ip === 'Not Found').length;
-            
-            // Update summary display
-            document.getElementById('totalInput').textContent = totalInput;
-            document.getElementById('totalFound').textContent = foundCount;
-            document.getElementById('totalNotFound').textContent = notFoundCount;
-            
-            // Show summary section
-            summarySection.classList.remove('d-none');
-            
-            // IMPROVED: Use document fragment for better performance
-            const fragment = document.createDocumentFragment();
-            
-            // Store data for sorting
-            tableData = data.map((item, index) => ({
-                ...item,
-                originalIndex: index + 1
-            }));
-            
-            renderTable();
-            
-        } else {
-            resultsBody.innerHTML = `
-                <tr>
-                    <td colspan="3" class="text-center text-muted py-4">
-                        <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
-                        No results found for CSID: ${csid}
-                    </td>
-                </tr>
-            `;
+            performSearch('/search-ip', 'ip', 'IP Address');
         }
-    })
-    .catch(error => {
-        searchProgress.classList.add('d-none');
-        console.error('Error:', error);
-        resultsBody.innerHTML = `
-            <tr>
-                <td colspan="3" class="text-center text-danger py-4">
-                    <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
-                    An error occurred while searching. Please try again.
-                </td>
-            </tr>
-        `;
-    });
-}
 
-        // Function to render table with current data
+        function searchODP() {
+            performSearch('/find-odp', 'odp', 'ODP ID');
+        }
+
+        function performSearch(endpoint, type, headerText) {
+            const fileInput = document.getElementById('excelFile');
+            const csid = document.getElementById('csidInput').value;
+            const searchProgress = document.getElementById('searchProgress');
+            const resultsBody = document.getElementById('resultsBody');
+            const summarySection = document.getElementById('summarySection');
+            const resultHeader = document.getElementById('resultHeader');
+            const searchText = document.getElementById('searchText');
+            
+            if (!fileLoaded) {
+                alert('Please upload an Excel file first');
+                return;
+            }
+            
+            if (!csid.trim()) {
+                alert('Please enter at least one CSID');
+                return;
+            }
+            
+            // Update search type and header
+            searchType = type;
+            resultHeader.textContent = headerText;
+            searchText.textContent = `Searching for ${headerText}...`;
+            
+            summarySection.classList.add('d-none');
+            searchProgress.classList.remove('d-none');
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('csid', csid);
+
+            fetch(endpoint, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                searchProgress.classList.add('d-none');
+                resultsBody.innerHTML = '';
+                
+                if (data.length > 0) {
+                    const inputCSIDs = csid.trim().split('\n').filter(line => line.trim() !== '');
+                    const totalInput = inputCSIDs.length;
+                    const foundCount = data.filter(item => item[type] !== 'Not Found').length;
+                    const notFoundCount = data.filter(item => item[type] === 'Not Found').length;
+                    
+                    document.getElementById('totalInput').textContent = totalInput;
+                    document.getElementById('totalFound').textContent = foundCount;
+                    document.getElementById('totalNotFound').textContent = notFoundCount;
+                    
+                    summarySection.classList.remove('d-none');
+                    
+                    tableData = data.map((item, index) => ({
+                        ...item,
+                        originalIndex: index + 1
+                    }));
+                    
+                    renderTable();
+                } else {
+                    resultsBody.innerHTML = `
+                        <tr>
+                            <td colspan="3" class="text-center text-muted py-4">
+                                <i class="fas fa-exclamation-circle fa-2x mb-2 d-block"></i>
+                                No results found
+                            </td>
+                        </tr>
+                    `;
+                }
+            })
+            .catch(error => {
+                searchProgress.classList.add('d-none');
+                console.error('Error:', error);
+                resultsBody.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="text-center text-danger py-4">
+                            <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                            An error occurred while searching. Please try again.
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
         function renderTable() {
             const resultsBody = document.getElementById('resultsBody');
             const fragment = document.createDocumentFragment();
             
             tableData.forEach((item, index) => {
                 const tr = document.createElement('tr');
+                const resultValue = searchType === 'ip' ? item.ip : item.odp;
+                const isNotFound = resultValue === 'Not Found';
+                const iconClass = searchType === 'ip' ? 'fa-network-wired' : 'fa-project-diagram';
+                
                 tr.innerHTML = `
                     <td><strong>${item.originalIndex}</strong></td>
                     <td><i class="fas fa-id-card me-2 text-primary"></i>${item.csid}</td>
-                    <td><i class="fas fa-network-wired me-2 ${item.ip === 'Not Found' ? 'text-danger' : 'text-success'}"></i>${item.ip}</td>
+                    <td><i class="fas ${iconClass} me-2 ${isNotFound ? 'text-danger' : 'text-success'}"></i>${resultValue}</td>
                 `;
                 fragment.appendChild(tr);
             });
@@ -787,21 +785,15 @@ SI-BK005865"></textarea>
             resultsBody.appendChild(fragment);
         }
 
-        // Function to sort table
         function sortTable(columnIndex) {
             if (tableData.length === 0) return;
             
-            // Don't allow sorting on the number column (column 0)
-            if (columnIndex === 0) {
-                return;
-            }
+            if (columnIndex === 0) return;
             
-            // Reset all sort icons
             document.querySelectorAll('.sort-icon').forEach(icon => {
                 icon.className = 'fas fa-sort sort-icon';
             });
             
-            // Determine sort direction
             if (currentSort.column === columnIndex) {
                 currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
             } else {
@@ -809,27 +801,26 @@ SI-BK005865"></textarea>
             }
             currentSort.column = columnIndex;
             
-            // Update sort icon
             const sortIcon = document.getElementById(`sort-${columnIndex}`);
             sortIcon.className = `fas fa-sort-${currentSort.direction === 'asc' ? 'up' : 'down'} sort-icon active`;
             
-            // Sort the data
             tableData.sort((a, b) => {
                 let valueA, valueB;
                 
                 switch(columnIndex) {
-                    case 1: // CSID column
+                    case 1:
                         valueA = a.csid.toLowerCase();
                         valueB = b.csid.toLowerCase();
                         break;
-                    case 2: // IP Address column
-                        valueA = a.ip;
-                        valueB = b.ip;
-                        // Handle "Not Found" specially - put at end
+                    case 2:
+                        const resultKey = searchType === 'ip' ? 'ip' : 'odp';
+                        valueA = a[resultKey];
+                        valueB = b[resultKey];
+                        
                         if (valueA === 'Not Found' && valueB !== 'Not Found') return 1;
                         if (valueB === 'Not Found' && valueA !== 'Not Found') return -1;
-                        // If both are valid IPs, use proper IP sorting
-                        if (valueA !== 'Not Found' && valueB !== 'Not Found') {
+                        
+                        if (searchType === 'ip' && valueA !== 'Not Found' && valueB !== 'Not Found') {
                             const ipA = valueA.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
                             const ipB = valueB.split('.').map(num => parseInt(num, 10).toString().padStart(3, '0')).join('.');
                             valueA = ipA;
@@ -850,24 +841,32 @@ SI-BK005865"></textarea>
                 }
             });
             
-            // Re-render the table
             renderTable();
         }
 
-        // Clear input function
         function clearInput() {
             document.getElementById('csidInput').value = '';
         }
 
-        // Clear results function
         function clearResults() {
-            document.getElementById('resultsSection').classList.add('d-none');
-            document.getElementById('resultsTable').innerHTML = '';
+            document.getElementById('summarySection').classList.add('d-none');
+            document.getElementById('resultsBody').innerHTML = `
+                <tr>
+                    <td colspan="3" class="text-center text-muted py-4">
+                        <i class="fas fa-search fa-2x mb-2 d-block"></i>
+                        No results yet. Upload a file and search for a CSID.
+                    </td>
+                </tr>
+            `;
+            tableData = [];
+            currentSort = { column: -1, direction: 'asc' };
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.className = 'fas fa-sort sort-icon';
+            });
         }
 
-        // Allow Enter key to trigger search
         document.getElementById('csidInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && e.ctrlKey) {
                 searchIP();
             }
         });

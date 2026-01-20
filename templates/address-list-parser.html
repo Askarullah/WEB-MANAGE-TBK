@@ -479,11 +479,17 @@ Example:
             
             // Pattern for entries with CSID/List name and IP
             const patterns = [
-                // Pattern: CSID/Name    IP    Date
+                // Pattern: CSID/Name    IP    Date (YYYY-MM-DD format)
+                /^([^\s]+)\s+([0-9./]+(?:\s+[0-9./]+)*)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/,
+                // Pattern: CSID/Name    IP    Date (mmm/dd/yyyy format)
                 /^([^\s]+)\s+([0-9./]+(?:\s+[0-9./]+)*)\s+([a-z]{3}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/,
-                // Pattern: allow_remote_... IP Date
+                // Pattern: allow_remote_... IP Date (YYYY-MM-DD format)
+                /^(allow_remote_[^\s]*)\s+([0-9a-zA-Z./]+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/,
+                // Pattern: allow_remote_... IP Date (mmm/dd/yyyy format)
                 /^(allow_remote_[^\s]*)\s+([0-9a-zA-Z./]+)\s+([a-z]{3}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/,
-                // Pattern: Other list names
+                // Pattern: Other list names (YYYY-MM-DD format)
+                /^([A-Z_][A-Z0-9_]*)\s+([0-9./]+)\s+(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/,
+                // Pattern: Other list names (mmm/dd/yyyy format)
                 /^([A-Z_][A-Z0-9_]*)\s+([0-9./]+)\s+([a-z]{3}\/\d{2}\/\d{4}\s+\d{2}:\d{2}:\d{2})/
             ];
 

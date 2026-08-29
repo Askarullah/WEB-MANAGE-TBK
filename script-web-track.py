@@ -489,6 +489,8 @@ def _connect_via_system_ssh(ip, command, username, password, port):
             '-o', 'StrictHostKeyChecking=no',
             '-o', 'UserKnownHostsFile=/dev/null',
             '-o', 'ConnectTimeout=30',
+            '-o', 'HostKeyAlgorithms=+ssh-rsa',
+            '-o', 'PubkeyAcceptedAlgorithms=+ssh-rsa',
             '-p', str(port),
             f'{username}@{ip}',
             command

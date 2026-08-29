@@ -483,7 +483,55 @@ def _connect_via_system_ssh(ip, command, username, password, port):
         
         print(f"Connecting to HW switch {ip}:{port} via system SSH as {username}...")
         
-        # Build SSH command with password via stdin
+        # Build SSH command using sshpass for password authentication
+        # This avoids interactive password prompts
+        ssh_cmd = [
+            'sshpass',
+            '-p', password,
+            'ssh',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'ConnectTimeout=30',
+            '-o', 'HostKeyAlgorithms=+ssh-rsa',
+            '-o', 'PubkeyAcceptedAlgorithms=+ssh-rsa',
+            '-p', str(port),
+            f'{username}@{ip}',
+            command
+        ]
+        
+        # Execute SSH command
+        try:
+            process = subprocess.Popen(
+                ssh_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            stdout, stderr = process.communicate(timeout=30)
+            
+            if process.returncode != 0:
+                error_msg = stderr.strip() if stderr else stdout.strip()
+                return False, f"SSH command failed (exit {process.returncode}): {error_msg}"
+            
+            print(f"Successfully executed command on HW switch {ip}")
+            return True, stdout if stdout else "Command executed successfully"
+            
+        except FileNotFoundError:
+            # sshpass not available, fall back to system SSH with stdin
+            print("sshpass not found, falling back to standard SSH with stdin...")
+            return _connect_via_system_ssh_stdin(ip, command, username, password, port)
+        
+    except subprocess.TimeoutExpired:
+        return False, f"Connection timeout to HW switch {ip}:{port}"
+    except Exception as e:
+        return False, f"Error connecting via system SSH: {str(e)}"
+
+def _connect_via_system_ssh_stdin(ip, command, username, password, port):
+    """Fallback: Use standard SSH with stdin password (less reliable)."""
+    try:
+        import subprocess
+        
         ssh_cmd = [
             'ssh',
             '-o', 'StrictHostKeyChecking=no',
@@ -514,12 +562,10 @@ def _connect_via_system_ssh(ip, command, username, password, port):
         print(f"Successfully executed command on HW switch {ip}")
         return True, stdout if stdout else "Command executed successfully"
         
-    except FileNotFoundError:
-        return False, "SSH client not found on system. Please install OpenSSH"
     except subprocess.TimeoutExpired:
         return False, f"Connection timeout to HW switch {ip}:{port}"
     except Exception as e:
-        return False, f"Error connecting via system SSH: {str(e)}"
+        return False, f"Error connecting via SSH: {str(e)}"
 
 def _connect_via_paramiko(ip, command, vendor, username, password, port):
     """Use paramiko SSH client for DCN switches."""

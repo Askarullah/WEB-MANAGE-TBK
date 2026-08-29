@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Switch Command Manager</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 35%, #0ea5e9 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.96);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.2);
+        }
+
+        .header {
+            position: relative;
+            background: linear-gradient(135deg, #111827 0%, #2563eb 100%);
+            color: white;
+            padding: 28px 32px 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            margin: 0 0 8px;
+            font-size: clamp(2rem, 4vw, 2.8rem);
+            font-weight: 700;
+        }
+
+        .header p {
+            margin: 0;
+            opacity: 0.88;
+            font-size: 1rem;
+        }
+
+        .home-button {
+            position: absolute;
+            left: 20px;
+            top: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.22);
+            font-weight: 600;
+        }
+
+        .user-info {
+            position: absolute;
+            right: 20px;
+            top: 18px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.22);
+            font-weight: 600;
+        }
+
+        .content {
+            padding: 32px;
+        }
+
+        .section { margin-bottom: 32px; }
+        .section h2 {
+            margin: 0 0 16px;
+            color: #0f172a;
+            font-size: 1.5rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .command-panel,
+        .selection-panel,
+        .result-panel {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .command-panel label,
+        .selection-panel label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+
+        textarea,
+        select {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            background: white;
+        }
+
+        textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .examples {
+            margin-top: 14px;
+            background: #eff6ff;
+            border-left: 4px solid #2563eb;
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .examples h4 {
+            margin: 0 0 10px;
+            color: #1d4ed8;
+        }
+
+        .examples ul {
+            margin: 0;
+            padding-left: 18px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .examples li {
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            color: #0f172a;
+        }
+
+        .device-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+            margin-top: 16px;
+        }
+
+        .device-card {
+            position: relative;
+            background: white;
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            padding: 18px 16px;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        .device-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.08);
+        }
+
+        .device-card.selected {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .device-card h3 {
+            margin: 0 0 10px;
+            font-size: 1.1rem;
+            color: #0f172a;
+        }
+
+        .device-card p {
+            margin: 3px 0;
+            color: #475569;
+            font-size: 0.9rem;
+        }
+
+        .device-checkbox {
+            position: absolute;
+            right: 12px;
+            top: 12px;
+            width: 18px;
+            height: 18px;
+            accent-color: #10b981;
+        }
+
+        .status-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transition: 0.2s ease;
+        }
+
+        .btn:hover { transform: translateY(-1px); }
+        .btn.secondary { background: linear-gradient(135deg, #64748b 0%, #475569 100%); }
+        .btn.success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+        .selected-count {
+            display: inline-block;
+            padding: 9px 12px;
+            border-radius: 999px;
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-weight: 700;
+        }
+
+        .result-panel { display: none; }
+
+        .result-box {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 18px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 420px;
+            overflow: auto;
+            margin-top: 12px;
+        }
+
+        .error, .warning {
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 12px;
+            font-weight: 600;
+        }
+
+        .error { background: #fee2e2; color: #991b1b; }
+        .warning { background: #fef3c7; color: #92400e; }
+
+        .signature {
+            padding: 20px;
+            text-align: center;
+            background: #0f172a;
+            color: rgba(255,255,255,0.9);
+            font-weight: 600;
+        }
+
+        .login-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+
+        .login-modal {
+            background: white;
+            width: min(480px, 92vw);
+            border-radius: 18px;
+            padding: 28px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+        }
+
+        .login-modal h2 {
+            margin: 0 0 18px;
+            color: #0f172a;
+            text-align: center;
+        }
+
+        .login-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .login-form .field {
+            margin-bottom: 18px;
+        }
+
+        .login-form .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .login-form .actions > * { flex: 1; }
+
+        @media (max-width: 720px) {
+            .header { padding-top: 72px; }
+            .user-info { right: 12px; top: 12px; }
+            .home-button { left: 12px; top: 12px; }
+            .content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="home-button"><i class="fas fa-home"></i> Home</a>
+            <div class="user-info" id="userInfo"><i class="fas fa-user"></i> <span id="userDisplay">Not logged in</span></div>
+            <h1>Custom Switch Commands</h1>
+            <p>Execute switch management commands across selected network devices</p>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2>Command Setup</h2>
+                <div class="command-panel">
+                    <label for="customCommand">Switch command</label>
+                    <textarea id="customCommand" placeholder="Example: show running-config
+show interface status
+show vlan brief">show interface status</textarea>
+
+                    <div class="examples">
+                        <h4>Common switch commands</h4>
+                        <div id="commandExampleGroups">
+                            <div class="vendor-example-group" id="dcnExamples" style="display:block;">
+                                <ul>
+                                    <li onclick="setCommand('show running-config')">show running-config</li>
+                                    <li onclick="setCommand('show interface status')">show interface status</li>
+                                    <li onclick="setCommand('show vlan brief')">show vlan brief</li>
+                                    <li onclick="setCommand('show mac address-table')">show mac address-table</li>
+                                    <li onclick="setCommand('show ip interface brief')">show ip interface brief</li>
+                                    <li onclick="setCommand('show version')">show version</li>
+                                </ul>
+                            </div>
+                            <div class="vendor-example-group" id="hwExamples" style="display:none;">
+                                <ul>
+                                    <li onclick="setCommand('display current-configuration')">display current-configuration</li>
+                                    <li onclick="setCommand('display interface brief')">display interface brief</li>
+                                    <li onclick="setCommand('display vlan brief')">display vlan brief</li>
+                                    <li onclick="setCommand('display mac-address')">display mac-address</li>
+                                    <li onclick="setCommand('display ip interface brief')">display ip interface brief</li>
+                                    <li onclick="setCommand('display version')">display version</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Device Selection</h2>
+                <div class="selection-panel">
+                    <div class="controls">
+                        <div class="selected-count" id="selectedCount">0 devices selected</div>
+                        <select id="ringFilter" style="padding:10px 12px; border-radius:10px; border:1px solid #cbd5e1; min-width:160px;">
+                            <option value="all">All Rings</option>
+                            <option value="1">Ring 1</option>
+                            <option value="2">Ring 2</option>
+                            <option value="3">Ring 3</option>
+                        </select>
+                        <button class="btn" onclick="selectAllDevices()">Select All</button>
+                        <button class="btn secondary" onclick="clearSelection()">Clear</button>
+                        <button class="btn success" id="executeBtn" onclick="executeCommand()" disabled>Execute</button>
+                    </div>
+                    <div class="device-grid" id="deviceGrid"></div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Results</h2>
+                <div class="result-panel" id="resultPanel">
+                    <div id="resultOutput"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="signature">Managed by <span style="color:#38bdf8;">TBK Network Operations</span></div>
+    </div>
+
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-modal">
+            <h2>🔐 Switch Login</h2>
+            <form class="login-form" id="loginForm">
+                <div class="field">
+                    <label for="mikrotikUser">Select user</label>
+                    <select id="mikrotikUser" required>
+                        <option value="">-- Select User --</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="mikrotikPassword">Password</label>
+                    <textarea id="mikrotikPassword" rows="3" placeholder="Enter switch password"></textarea>
+                </div>
+                <div class="actions">
+                    <button type="button" class="btn secondary" onclick="cancelLogin()">Cancel</button>
+                    <button type="submit" class="btn success">Login</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let devices = [];
+        let selectedDevices = [];
+        let currentCredentials = null;
+        let activeRingFilter = 'all';
+
+        function inferDeviceVendor(device) {
+            const name = (device && device.name ? device.name : '').toUpperCase();
+            if (name.includes('HW') || name.includes('HUAWEI')) return 'HW';
+            return 'DCN';
+        }
+
+        function syncVendorExamples() {
+            const selectedVendorMap = {};
+            selectedDevices.forEach(index => {
+                const device = devices[index];
+                if (device) {
+                    selectedVendorMap[inferDeviceVendor(device)] = true;
+                }
+            });
+
+            const detectedVendor = Object.keys(selectedVendorMap)[0] || 'DCN';
+            const dcnGroup = document.getElementById('dcnExamples');
+            const hwGroup = document.getElementById('hwExamples');
+
+            if (dcnGroup && hwGroup) {
+                dcnGroup.style.display = detectedVendor === 'DCN' ? 'block' : 'none';
+                hwGroup.style.display = detectedVendor === 'HW' ? 'block' : 'none';
+            }
+        }
+
+        function getRingStats() {
+            const ringCounts = { '1': 0, '2': 0, '3': 0 };
+            devices.forEach(device => {
+                const ring = (device.ring || '').split('-').pop();
+                if (ringCounts.hasOwnProperty(ring)) {
+                    ringCounts[ring]++;
+                }
+            });
+            return ringCounts;
+        }
+
+        async function loadCredentials() {
+            try {
+                const response = await fetch('/api/switch-credentials');
+                const data = await response.json();
+                window.availableCredentials = data.credentials || [];
+
+                const select = document.getElementById('mikrotikUser');
+                select.innerHTML = '<option value="">-- Select User --</option>';
+
+                (data.credentials || []).forEach(credential => {
+                    const option = document.createElement('option');
+                    option.value = credential.username;
+                    option.textContent = `${credential.vendor} - ${credential.username}${credential.hasPassword ? ' ✓' : ' (no password)'}`;
+                    select.appendChild(option);
+                });
+
+                select.onchange = function () {
+                    const selected = this.value;
+                    const passwordField = document.getElementById('mikrotikPassword');
+                    const selectedCredential = window.availableCredentials.find(c => c.username === selected);
+                    if (selectedCredential && selectedCredential.hasPassword) {
+                        passwordField.style.display = 'none';
+                        passwordField.value = '';
+                    } else {
+                        passwordField.style.display = 'block';
+                    }
+                };
+            } catch (error) {
+                console.error('Failed to load credentials:', error);
+            }
+        }
+
+        async function loadDevices() {
+            try {
+                const response = await fetch('/api/devices-switch');
+                const data = await response.json();
+                devices = (data.devices || []).map(device => ({
+                    ...device,
+                    vendor: inferDeviceVendor(device)
+                }));
+                renderDevices();
+            } catch (error) {
+                console.error('Failed to load devices:', error);
+                document.getElementById('deviceGrid').innerHTML = '<div class="warning">No switch devices could be loaded.</div>';
+            }
+        }
+
+        function renderDevices() {
+            const grid = document.getElementById('deviceGrid');
+            grid.innerHTML = '';
+
+            const filteredDevices = devices.filter(device => {
+                if (activeRingFilter === 'all') return true;
+                const deviceRing = (device.ring || '').split('-').pop(); // Extract ring number from ring field
+                return deviceRing === activeRingFilter;
+            });
+
+            if (!filteredDevices.length) {
+                grid.innerHTML = '<div class="warning">No devices available for the selected network filter.</div>';
+                return;
+            }
+
+            filteredDevices.forEach((device, index) => {
+                const realIndex = devices.findIndex(d => d.ip === device.ip && d.name === device.name);
+                const card = document.createElement('div');
+                card.className = 'device-card';
+                card.innerHTML = `
+                    <input type="checkbox" class="device-checkbox" id="device-${realIndex}">
+                    <h3>${device.name || device.ip}</h3>
+                    <p><strong>IP:</strong> ${device.ip}</p>
+                    <p><strong>Location:</strong> ${device.location || 'N/A'}</p>
+                    <p><strong>Ring:</strong> ${device.ring || 'N/A'}</p>
+                    <p><strong>Vendor:</strong> ${device.vendor || 'DCN'}</p>
+                    <span class="status-badge">Ready</span>
+                `;
+
+                card.addEventListener('click', (event) => {
+                    if (event.target.type !== 'checkbox') {
+                        const checkbox = card.querySelector('.device-checkbox');
+                        checkbox.checked = !checkbox.checked;
+                        toggleDevice(realIndex, checkbox.checked);
+                    }
+                });
+
+                card.querySelector('.device-checkbox').addEventListener('change', (event) => {
+                    toggleDevice(realIndex, event.target.checked);
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        function toggleDevice(index, checked) {
+            const card = document.getElementById(`device-${index}`)?.closest('.device-card');
+            if (checked) {
+                if (!selectedDevices.includes(index)) selectedDevices.push(index);
+                if (card) card.classList.add('selected');
+            } else {
+                selectedDevices = selectedDevices.filter(i => i !== index);
+                if (card) card.classList.remove('selected');
+            }
+            updateSelectionCount();
+            syncVendorExamples();
+        }
+
+        function updateSelectionCount() {
+            const count = selectedDevices.length;
+            document.getElementById('selectedCount').textContent = `${count} device${count !== 1 ? 's' : ''} selected`;
+            document.getElementById('executeBtn').disabled = count === 0 || !document.getElementById('customCommand').value.trim();
+        }
+
+        function selectAllDevices() {
+            selectedDevices = [];
+            const filteredIndexes = devices
+                .map((device, index) => ({ device, index }))
+                .filter(({ device }) => {
+                    if (activeRingFilter === 'all') return true;
+                    const deviceRing = (device.ring || '').split('-').pop();
+                    return deviceRing === activeRingFilter;
+                })
+                .map(({ index }) => index);
+
+            filteredIndexes.forEach((index) => {
+                const checkbox = document.getElementById(`device-${index}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    checkbox.closest('.device-card').classList.add('selected');
+                    selectedDevices.push(index);
+                }
+            });
+            updateSelectionCount();
+            syncVendorExamples();
+        }
+
+        function clearSelection() {
+            selectedDevices = [];
+            devices.forEach((device, index) => {
+                const checkbox = document.getElementById(`device-${index}`);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.closest('.device-card').classList.remove('selected');
+                }
+            });
+            updateSelectionCount();
+            syncVendorExamples();
+        }
+
+        function setCommand(command) {
+            document.getElementById('customCommand').value = command;
+            updateSelectionCount();
+        }
+
+        async function executeCommand() {
+            if (!currentCredentials) {
+                document.getElementById('loginOverlay').style.display = 'flex';
+                return;
+            }
+
+            const command = document.getElementById('customCommand').value.trim();
+            if (!command) {
+                alert('Please enter a switch command');
+                return;
+            }
+
+            if (!selectedDevices.length) {
+                alert('Please select at least one device');
+                return;
+            }
+
+            const outputNode = document.getElementById('resultOutput');
+            const panel = document.getElementById('resultPanel');
+            panel.style.display = 'block';
+            outputNode.innerHTML = '<div class="warning">Executing commands on selected switch devices...</div>';
+
+            const results = [];
+            for (const index of selectedDevices) {
+                const device = devices[index];
+                const vendor = (device && device.vendor) || ((device && device.name && device.name.toUpperCase().includes('HW')) ? 'HW' : 'DCN');
+
+                if (currentCredentials.vendor && vendor !== currentCredentials.vendor) {
+                    results.push({
+                        device,
+                        success: false,
+                        output: `Selected credentials are for ${currentCredentials.vendor}, but this device is ${vendor}. Please log in with the matching vendor account.`
+                    });
+                    continue;
+                }
+
+                try {
+                    const response = await fetch('/api/switch/execute-command', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            ip: device.ip,
+                            command: command,
+                            vendor: vendor,
+                            username: currentCredentials.username,
+                            password: currentCredentials.password
+                        })
+                    });
+                    const result = await response.json();
+                    results.push({ device, success: result.success, output: result.output || result.error || 'No output returned' });
+                } catch (error) {
+                    results.push({ device, success: false, output: `Connection error: ${error.message}` });
+                }
+            }
+
+            let html = '';
+            results.forEach((item) => {
+                html += `\n=== ${item.device.name || item.device.ip} (${item.device.ip}) ===\n${item.success ? '' : 'ERROR: '}${item.output}\n\n`;
+            });
+
+            outputNode.innerHTML = `<div class="result-box">${html.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>`;
+        }
+
+        function cancelLogin() {
+            document.getElementById('loginOverlay').style.display = 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            loadCredentials();
+            loadDevices();
+
+            document.getElementById('ringFilter').addEventListener('change', function () {
+                activeRingFilter = this.value;
+                renderDevices();
+            });
+
+            document.getElementById('loginForm').addEventListener('submit', function (event) {
+                event.preventDefault();
+                const username = document.getElementById('mikrotikUser').value;
+                const password = document.getElementById('mikrotikPassword').value;
+
+                if (!username) {
+                    alert('Please select a user');
+                    return;
+                }
+
+                const selectedCredential = window.availableCredentials?.find(c => c.username === username);
+                const hasStoredPassword = selectedCredential?.hasPassword;
+
+                if (!hasStoredPassword && !password.trim()) {
+                    alert('Please enter a password for this user');
+                    return;
+                }
+
+                currentCredentials = {
+                    username,
+                    vendor: selectedCredential?.vendor || 'DCN',
+                    password: hasStoredPassword ? null : password
+                };
+
+                document.getElementById('userDisplay').textContent = `${currentCredentials.vendor} - ${username}${hasStoredPassword ? ' (stored password)' : ''}`;
+                document.getElementById('loginOverlay').style.display = 'none';
+            });
+
+            document.getElementById('customCommand').addEventListener('input', updateSelectionCount);
+        });
+    </script>
+</body>
+</html>

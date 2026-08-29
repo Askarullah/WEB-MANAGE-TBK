@@ -1,0 +1,205 @@
+[
+  {
+    "name": "SW-DCN-LL-GDS-MDF-B",
+    "ip": "172.31.41.93",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "GDS MDF B"
+  },
+  {
+    "name": "SW-DCN-LL-KABIL-41-61",
+    "ip": "172.31.41.61",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "KABIL"
+  },
+  {
+    "name": "SW-DCN-LL-NDP-41-96",
+    "ip": "172.31.41.96",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "NDP"
+  },
+  {
+    "name": "SW-DCN-LL-NONGSA-41-91",
+    "ip": "172.31.41.91",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "NONGSA"
+  },
+  {
+    "name": "SW-DCN-LL-PAMA-40-51",
+    "ip": "172.31.40.51",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "PAMA"
+  },
+  {
+    "name": "SW-DCN-LL-PUNGGUR-40-121",
+    "ip": "172.31.40.121",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "PUNGGUR"
+  },
+  {
+    "name": "SW-DCN-LL-SINCOM-40-71",
+    "ip": "172.31.40.71",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "SINCOM"
+  },
+  {
+    "name": "SW-DCN-LL-TNS-PRIMA-40-131",
+    "ip": "172.31.40.131",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "TNS PRIMA"
+  },
+  {
+    "name": "SW-DCN-LL-TUNAS-41-31",
+    "ip": "172.31.41.31",
+    "ring": "LocalLoop-1",
+    "network": "LocalLoop",
+    "location": "TUNAS"
+  },
+  {
+    "name": "SW-INT-01",
+    "ip": "10.0.0.1",
+    "ring": "Internet-1",
+    "network": "Internet",
+    "location": "Ring 1"
+  },
+  {
+    "name": "SW-INT-02",
+    "ip": "10.0.0.2",
+    "ring": "Internet-2",
+    "network": "Internet",
+    "location": "Ring 2"
+  },
+  {
+    "name": "SW-INT-03",
+    "ip": "10.0.0.3",
+    "ring": "Internet-3",
+    "network": "Internet",
+    "location": "Ring 3"
+  },
+  {
+    "name": "SW-LL-01",
+    "ip": "10.0.1.1",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "Ring 2"
+  },
+  {
+    "name": "SW-LL-02",
+    "ip": "10.0.1.2",
+    "ring": "LocalLoop-3",
+    "network": "LocalLoop",
+    "location": "Ring 3"
+  },
+  {
+    "name": "SW-DCN-LL-BENGKONG-40-201",
+    "ip": "172.31.40.201",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "BENGKONG"
+  },
+  {
+    "name": "SW-DCN-LL-BPJS-40-41",
+    "ip": "172.31.40.41",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "BPJS"
+  },
+  {
+    "name": "SW-DCN-LL-BUKIT SENYUM-41-41",
+    "ip": "172.31.41.41",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "BUKIT SENYUM"
+  },
+  {
+    "name": "SW-DCN-LL-HARBOURBAY-41-131",
+    "ip": "172.31.41.131",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "HARBOURBAY"
+  },
+  {
+    "name": "SW-DCN-LL-MCDERMOTT-GATE1-40-162",
+    "ip": "172.31.40.162",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "MCDERMOTT GATE1"
+  },
+  {
+    "name": "SW-DCN-LL-MCDERMOTT-GATE5-40-161",
+    "ip": "172.31.40.161",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "MCDERMOTT GATE5"
+  },
+  {
+    "name": "SW-DCN-LL-MONDE-40-61",
+    "ip": "172.31.40.61",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "MONDE"
+  },
+  {
+    "name": "SW-HW-LL-BAIQI-41-221",
+    "ip": "172.31.41.221",
+    "ring": "LocalLoop-2",
+    "network": "LocalLoop",
+    "location": "BAIQI"
+  },
+  {
+    "name": "SW-DCN-LL-BWP",
+    "ip": "172.31.40.141",
+    "ring": "LocalLoop-3",
+    "network": "LocalLoop",
+    "location": "BWP"
+  },
+  {
+    "name": "SW-DCN-LL-CLH",
+    "ip": "172.31.41.191",
+    "ring": "LocalLoop-3",
+    "network": "LocalLoop",
+    "location": "CLH"
+  },
+  {
+    "name": "SW-DCN-LL-MUKAKUNING",
+    "ip": "172.31.40.111",
+    "ring": "LocalLoop-3",
+    "network": "LocalLoop",
+    "location": "MUKA KUNING"
+  },
+  {
+    "name": "SW-DCN-PANBIL",
+    "ip": "172.31.41.71",
+    "ring": "LocalLoop-3",
+    "network": "LocalLoop",
+    "location": "PANBIL"
+  },
+  {
+    "name": "SW-HW-LL-BINTANG",
+    "ip": "172.31.41.51",
+    "ring": "LocalLoop-3",
+    "network": "LocalLoop",
+    "location": "BINTANG"
+  },
+  {
+    "name": "SW-HW-LL-SP-PLAZA",
+    "ip": "172.31.41.171",
+    "ring": "LocalLoop-3",
+    "network": "LocalLoop",
+    "location": "SP PLAZA"
+  },
+  {
+    "name": "SW-HW-LL-TIBAN",
+    "ip": "172.31.41.101",
+    "ring": "LocalLoop-3",
+    "network": "LocalLoop",
+    "location": "TIBAN"
+  }
+]

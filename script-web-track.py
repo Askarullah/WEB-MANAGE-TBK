@@ -441,6 +441,107 @@ def connect_to_olt(ip, command, username=None, password=None):
             except:
                 pass
 
+def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, port=None):
+    """
+    Establish SSH connection to a network switch (DCN or Huawei) and execute commands.
+    
+    Args:
+        ip (str): IP address of the switch
+        command (str): Command to execute on the switch
+        vendor (str): 'DCN' or 'HW' for Huawei
+        username (str, optional): SSH username (uses vendor default if None)
+        password (str, optional): SSH password (uses vendor default if None)
+        port (int, optional): SSH port (uses vendor default if None)
+        
+    Returns:
+        tuple: (success: bool, result: str) - Success status and command output or error message
+    """
+    ssh_client = None
+    
+    try:
+        # Get vendor-specific credentials if not provided
+        vendor_config = get_switch_credentials_for_vendor(vendor)
+        auth_username = username if username else vendor_config['username']
+        auth_password = password if password else vendor_config['password']
+        auth_port = port if port else vendor_config['port']
+        
+        if not auth_username or not auth_password:
+            return False, f"Missing credentials for {vendor} switches in environment"
+        
+        # Initialize SSH client
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh_client.load_system_host_keys()
+        
+        print(f"Connecting to {vendor} switch {ip}:{auth_port} as {auth_username}...")
+        
+        # Establish SSH connection
+        ssh_client.connect(
+            hostname=ip,
+            username=auth_username,
+            password=auth_password,
+            port=auth_port,
+            timeout=30,
+            auth_timeout=30,
+            banner_timeout=30,
+            look_for_keys=False,
+            allow_agent=False,
+            compress=False
+        )
+        
+        print(f"Successfully connected to {vendor} switch {ip}")
+        
+        # Execute command with timeout
+        stdin, stdout, stderr = ssh_client.exec_command(command, timeout=30)
+        
+        # Wait for command completion
+        exit_status = stdout.channel.recv_exit_status()
+        
+        # Read output
+        output = stdout.read().decode('utf-8', errors='ignore')
+        error = stderr.read().decode('utf-8', errors='ignore')
+        
+        print(f"Command executed on {vendor} switch. Exit status: {exit_status}")
+        
+        # Handle errors
+        if exit_status != 0 and error:
+            return False, f"Command error (exit {exit_status}): {error}"
+        
+        return True, output if output else "Command executed successfully with no output"
+        
+    except paramiko.AuthenticationException as e:
+        error_msg = f"Authentication failed for {vendor} switch at {ip}: {str(e)}"
+        print(error_msg)
+        return False, error_msg
+        
+    except paramiko.SSHException as e:
+        error_msg = f"SSH error connecting to {vendor} switch at {ip}: {str(e)}"
+        print(error_msg)
+        return False, error_msg
+        
+    except socket.timeout:
+        error_msg = f"Connection timeout to {vendor} switch {ip}:{port or 22}"
+        print(error_msg)
+        return False, error_msg
+        
+    except socket.error as e:
+        error_msg = f"Network error connecting to {vendor} switch {ip}: {str(e)}"
+        print(error_msg)
+        return False, error_msg
+        
+    except Exception as e:
+        error_msg = f"Unexpected error on {vendor} switch {ip}: {str(e)}"
+        print(error_msg)
+        return False, error_msg
+        
+    finally:
+        if ssh_client:
+            try:
+                ssh_client.close()
+                print(f"SSH connection to {ip} closed")
+            except:
+                pass
+
 def parse_mikrotik_firewall_output(output):
     """
     Parse MikroTik firewall address-list output into structured data.
@@ -577,6 +678,23 @@ def load_devices_olt():
         print(f"Error loading OLT devices: {e}")
         return []
 
+def load_devices_switch():
+    """
+    Load switch devices from JSON file.
+    Reads device configuration from devices-switch.json in the same directory.
+    """
+    try:
+        devices_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'devices-switch.json')
+        if os.path.exists(devices_file):
+            with open(devices_file, 'r') as f:
+                devices = json.load(f)
+            return devices
+        print("Warning: devices-switch.json not found. Using empty device list.")
+        return []
+    except Exception as e:
+        print(f"Error loading switch devices: {e}")
+        return []
+
 # ============================================================================
 #           Excel Processing Functions
 # ============================================================================
@@ -699,6 +817,11 @@ def custom_command():
 @app.route('/custom-olt-command.html')
 def custom_olt_command():
     return render_template('custom-olt-command.html')
+
+@app.route('/custom-switch-command.html')
+def custom_switch_command():
+    """Route for the Custom Switch Command management page"""
+    return render_template('custom-switch-command.html')
 
 @app.route('/address-list-parser.html')
 def address_list_parser():
@@ -1590,7 +1713,11 @@ def get_devices_olt():
     devices = load_devices_olt()
     return jsonify({'devices': devices})
 
-
+@app.route('/api/devices-switch', methods=['GET'])
+def get_devices_switch():
+    """Get list of available switch devices from JSON file"""
+    devices = load_devices_switch()
+    return jsonify({'devices': devices})
 
 @app.route('/api/devices-active', methods=['GET'])
 def get_devices_active():
@@ -1633,6 +1760,104 @@ def get_mikrotik_credentials():
         
     except Exception as e:
         return jsonify({'error': f'Failed to load credentials: {str(e)}'}), 500
+
+
+def infer_switch_vendor(device_name):
+    """Infer switch vendor from the device name or vendor label."""
+    if not device_name:
+        return 'DCN'
+
+    name = str(device_name).upper()
+    if 'HW' in name or 'HUAWEI' in name:
+        return 'HW'
+    if 'DCN' in name:
+        return 'DCN'
+    return 'DCN'
+
+
+def get_switch_credentials_for_vendor(vendor_name):
+    """Return the credentials for a given vendor from environment variables."""
+    vendor = (vendor_name or 'DCN').upper()
+
+    if vendor == 'HW':
+        username = os.getenv('SWITCH_HW_USERNAME')
+        password = os.getenv('SWITCH_HW_PASSWORD')
+        port = int(os.getenv('SWITCH_HW_PORT', '22'))
+    else:
+        username = os.getenv('SWITCH_DCN_USERNAME')
+        password = os.getenv('SWITCH_DCN_PASSWORD')
+        port = int(os.getenv('SWITCH_DCN_PORT', '22'))
+
+    return {
+        'vendor': vendor,
+        'username': username,
+        'password': password,
+        'port': port,
+        'hasPassword': bool(password and password.strip())
+    }
+
+
+@app.route('/api/switch-credentials', methods=['GET'])
+def get_switch_credentials():
+    """Get available switch credentials by vendor."""
+    try:
+        vendors = ['DCN', 'HW']
+        credentials = []
+
+        for vendor in vendors:
+            config = get_switch_credentials_for_vendor(vendor)
+            if config['username']:
+                credentials.append({
+                    'vendor': config['vendor'],
+                    'username': config['username'],
+                    'password': config['password'] if config['password'] and config['password'].strip() else None,
+                    'hasPassword': config['hasPassword'],
+                    'port': config['port']
+                })
+
+        return jsonify({'success': True, 'credentials': credentials})
+    except Exception as e:
+        return jsonify({'error': f'Failed to load switch credentials: {str(e)}'}), 500
+
+
+@app.route('/api/switch/execute-command', methods=['POST'])
+def execute_switch_command():
+    """Execute a command on a network switch (DCN or Huawei)."""
+    try:
+        data = request.get_json()
+        ip = data.get('ip')
+        command = data.get('command')
+        vendor = data.get('vendor', 'DCN')
+        username = data.get('username')
+        password = data.get('password')
+        
+        # Validate required fields
+        if not ip:
+            return jsonify({'error': 'IP address is required'}), 400
+        if not command:
+            return jsonify({'error': 'Command is required'}), 400
+        
+        print(f"Executing command on {vendor} switch {ip}: {command[:50]}...")
+        
+        # Execute command on switch
+        success, output = connect_to_switch(
+            ip=ip,
+            command=command,
+            vendor=vendor,
+            username=username,
+            password=password
+        )
+        
+        return jsonify({
+            'success': success,
+            'output': output,
+            'error': None if success else output
+        })
+        
+    except Exception as e:
+        error_msg = f"Error executing switch command: {str(e)}"
+        print(error_msg)
+        return jsonify({'success': False, 'error': error_msg}), 500
 
 # ============================================================================
 # Application Entry Point

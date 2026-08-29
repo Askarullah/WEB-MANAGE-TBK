@@ -474,8 +474,7 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
         
         print(f"Connecting to {vendor} switch {ip}:{auth_port} as {auth_username}...")
         
-        # For Huawei and older switches, disable stricter algorithms
-        # This allows compatibility with switches using older SSH implementations
+        # Build connection kwargs with all necessary parameters
         connect_kwargs = {
             'hostname': ip,
             'username': auth_username,
@@ -489,11 +488,15 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
             'compress': False
         }
         
-        # For Huawei switches, disable certain algorithms to allow older host key types
+        # For switches (especially Huawei), allow all host key algorithms
+        # This includes: ssh-rsa, ecdsa-sha2-nistp256, ssh-ed25519, ssh-dss, etc.
         if vendor == 'HW':
             connect_kwargs['disabled_algorithms'] = {
-                'pubkeys': ['rsa-sha2-512', 'rsa-sha2-256'],
-                'keys': []
+                'pubkeys': [],  # Allow all public key algorithms
+                'keys': [],     # Allow all key types
+                'kex': [],      # Allow all key exchange algorithms
+                'ciphers': [],  # Allow all ciphers
+                'macs': []      # Allow all MAC algorithms
             }
         
         # Establish SSH connection

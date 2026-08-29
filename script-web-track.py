@@ -445,6 +445,9 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
     """
     Establish SSH connection to a network switch (DCN or Huawei) and execute commands.
     
+    For Huawei switches with non-standard algorithms, uses system SSH via subprocess.
+    For DCN switches, uses paramiko SSH client.
+    
     Args:
         ip (str): IP address of the switch
         command (str): Command to execute on the switch
@@ -456,30 +459,84 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
     Returns:
         tuple: (success: bool, result: str) - Success status and command output or error message
     """
+    
+    # Get vendor-specific credentials if not provided
+    vendor_config = get_switch_credentials_for_vendor(vendor)
+    auth_username = username if username else vendor_config['username']
+    auth_password = password if password else vendor_config['password']
+    auth_port = port if port else vendor_config['port']
+    
+    if not auth_username or not auth_password:
+        return False, f"Missing credentials for {vendor} switches in environment"
+    
+    # For Huawei switches, use system SSH (supports all algorithms including x509v3)
+    if vendor == 'HW':
+        return _connect_via_system_ssh(ip, command, auth_username, auth_password, auth_port)
+    else:
+        # For DCN switches, use paramiko
+        return _connect_via_paramiko(ip, command, vendor, auth_username, auth_password, auth_port)
+
+def _connect_via_system_ssh(ip, command, username, password, port):
+    """Use system SSH command to connect (supports more algorithms than paramiko)."""
+    try:
+        import subprocess
+        
+        print(f"Connecting to HW switch {ip}:{port} via system SSH as {username}...")
+        
+        # Build SSH command with password via stdin
+        ssh_cmd = [
+            'ssh',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'UserKnownHostsFile=/dev/null',
+            '-o', 'ConnectTimeout=30',
+            '-p', str(port),
+            f'{username}@{ip}',
+            command
+        ]
+        
+        # Execute SSH command with password via stdin
+        process = subprocess.Popen(
+            ssh_cmd,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=30
+        )
+        
+        stdout, stderr = process.communicate(input=f'{password}\n', timeout=30)
+        
+        if process.returncode != 0:
+            error_msg = stderr.strip() if stderr else stdout.strip()
+            return False, f"SSH command failed (exit {process.returncode}): {error_msg}"
+        
+        print(f"Successfully executed command on HW switch {ip}")
+        return True, stdout if stdout else "Command executed successfully"
+        
+    except FileNotFoundError:
+        return False, "SSH client not found on system. Please install OpenSSH"
+    except subprocess.TimeoutExpired:
+        return False, f"Connection timeout to HW switch {ip}:{port}"
+    except Exception as e:
+        return False, f"Error connecting via system SSH: {str(e)}"
+
+def _connect_via_paramiko(ip, command, vendor, username, password, port):
+    """Use paramiko SSH client for DCN switches."""
     ssh_client = None
     
     try:
-        # Get vendor-specific credentials if not provided
-        vendor_config = get_switch_credentials_for_vendor(vendor)
-        auth_username = username if username else vendor_config['username']
-        auth_password = password if password else vendor_config['password']
-        auth_port = port if port else vendor_config['port']
-        
-        if not auth_username or not auth_password:
-            return False, f"Missing credentials for {vendor} switches in environment"
-        
         # Initialize SSH client
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
-        print(f"Connecting to {vendor} switch {ip}:{auth_port} as {auth_username}...")
+        print(f"Connecting to {vendor} switch {ip}:{port} as {username}...")
         
-        # Build connection kwargs with all necessary parameters
+        # Build connection kwargs
         connect_kwargs = {
             'hostname': ip,
-            'username': auth_username,
-            'password': auth_password,
-            'port': auth_port,
+            'username': username,
+            'password': password,
+            'port': port,
             'timeout': 30,
             'auth_timeout': 30,
             'banner_timeout': 30,
@@ -487,19 +544,6 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
             'allow_agent': False,
             'compress': False
         }
-        
-        # For Huawei switches, enable support for all their host key algorithms
-        # Supported algorithms: ecdsa-sha2-nistp256/384/521, ssh-ed25519, 
-        # x509v3-sign-rsa, x509v3-ssh-rsa, x509v3-sign-dss, x509v3-ssh-dss, ssh-rsa, ssh-dss
-        if vendor == 'HW':
-            # Keep disabled_algorithms empty to allow all algorithms
-            connect_kwargs['disabled_algorithms'] = {
-                'pubkeys': [],
-                'keys': [],
-                'kex': [],
-                'ciphers': [],
-                'macs': []
-            }
         
         # Establish SSH connection
         ssh_client.connect(**connect_kwargs)
@@ -535,7 +579,7 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
         return False, error_msg
         
     except socket.timeout:
-        error_msg = f"Connection timeout to {vendor} switch {ip}:{port or 22}"
+        error_msg = f"Connection timeout to {vendor} switch {ip}:{port}"
         print(error_msg)
         return False, error_msg
         

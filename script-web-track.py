@@ -500,8 +500,7 @@ def _connect_via_system_ssh(ip, command, username, password, port):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True,
-            timeout=30
+            text=True
         )
         
         stdout, stderr = process.communicate(input=f'{password}\n', timeout=30)

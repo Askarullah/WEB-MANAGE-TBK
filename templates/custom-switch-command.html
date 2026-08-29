@@ -662,6 +662,13 @@ show vlan brief">show interface status</textarea>
                             password: currentCredentials.password
                         })
                     });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        results.push({ device, success: false, output: `HTTP ${response.status}: ${errorText}` });
+                        continue;
+                    }
+                    
                     const result = await response.json();
                     results.push({ device, success: result.success, output: result.output || result.error || 'No output returned' });
                 } catch (error) {

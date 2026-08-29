@@ -1824,18 +1824,22 @@ def get_switch_credentials():
 def execute_switch_command():
     """Execute a command on a network switch (DCN or Huawei)."""
     try:
-        data = request.get_json()
-        ip = data.get('ip')
-        command = data.get('command')
-        vendor = data.get('vendor', 'DCN')
-        username = data.get('username')
-        password = data.get('password')
+        # Parse JSON with error handling
+        data = request.get_json(force=True, silent=False)
+        if not data:
+            return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
+        
+        ip = data.get('ip', '').strip()
+        command = data.get('command', '').strip()
+        vendor = (data.get('vendor', 'DCN') or 'DCN').upper()
+        username = data.get('username', '').strip() or None
+        password = data.get('password', '').strip() or None
         
         # Validate required fields
         if not ip:
-            return jsonify({'error': 'IP address is required'}), 400
+            return jsonify({'success': False, 'error': 'IP address is required'}), 400
         if not command:
-            return jsonify({'error': 'Command is required'}), 400
+            return jsonify({'success': False, 'error': 'Command is required'}), 400
         
         print(f"Executing command on {vendor} switch {ip}: {command[:50]}...")
         
@@ -1848,15 +1852,20 @@ def execute_switch_command():
             password=password
         )
         
+        # Ensure output is a string
+        output_str = str(output) if output else ''
+        
         return jsonify({
             'success': success,
-            'output': output,
-            'error': None if success else output
+            'output': output_str,
+            'error': None if success else output_str
         })
         
     except Exception as e:
         error_msg = f"Error executing switch command: {str(e)}"
-        print(error_msg)
+        print(f"EXCEPTION in /api/switch/execute-command: {error_msg}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'success': False, 'error': error_msg}), 500
 
 # ============================================================================

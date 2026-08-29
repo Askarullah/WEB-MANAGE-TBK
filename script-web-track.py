@@ -17,6 +17,7 @@ import openpyxl
 import paramiko
 import re
 import socket
+import shutil
 
 import dotenv
 from dotenv import load_dotenv
@@ -444,10 +445,10 @@ def connect_to_olt(ip, command, username=None, password=None):
 def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, port=None):
     """
     Establish SSH connection to a network switch (DCN or Huawei) and execute commands.
-    
-    For Huawei switches with non-standard algorithms, uses system SSH via subprocess.
-    For DCN switches, uses paramiko SSH client.
-    
+
+    Prefer Paramiko first for both vendors because it avoids interactive password prompts.
+    Only use the system SSH fallback for HW when an explicit SSH password helper is available.
+
     Args:
         ip (str): IP address of the switch
         command (str): Command to execute on the switch
@@ -455,26 +456,36 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
         username (str, optional): SSH username (uses vendor default if None)
         password (str, optional): SSH password (uses vendor default if None)
         port (int, optional): SSH port (uses vendor default if None)
-        
+
     Returns:
         tuple: (success: bool, result: str) - Success status and command output or error message
     """
-    
+
     # Get vendor-specific credentials if not provided
     vendor_config = get_switch_credentials_for_vendor(vendor)
     auth_username = username if username else vendor_config['username']
     auth_password = password if password else vendor_config['password']
     auth_port = port if port else vendor_config['port']
-    
+
     if not auth_username or not auth_password:
         return False, f"Missing credentials for {vendor} switches in environment"
-    
-    # For Huawei switches, use system SSH (supports all algorithms including x509v3)
+
+    # Try Paramiko first for both vendors. It avoids the interactive SSH password prompt.
     if vendor == 'HW':
+        success, result = _connect_via_paramiko(ip, command, vendor, auth_username, auth_password, auth_port)
+        if success:
+            return True, result
+
+        if shutil.which('sshpass') is None:
+            return False, (
+                f"Huawei SSH via Paramiko failed for {ip}. "
+                "No sshpass tool is installed, and the app will not use interactive SSH prompts. "
+                "Please install sshpass or fix the device credentials/SSH settings."
+            )
+
         return _connect_via_system_ssh(ip, command, auth_username, auth_password, auth_port)
-    else:
-        # For DCN switches, use paramiko
-        return _connect_via_paramiko(ip, command, vendor, auth_username, auth_password, auth_port)
+
+    return _connect_via_paramiko(ip, command, vendor, auth_username, auth_password, auth_port)
 
 def _connect_via_system_ssh(ip, command, username, password, port):
     """Use system SSH command to connect (supports more algorithms than paramiko)."""

@@ -471,11 +471,14 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
         # Initialize SSH client
         ssh_client = paramiko.SSHClient()
         ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh_client.load_system_host_keys()
+        
+        # Enable support for older host key algorithms used by network switches
+        ssh_client.get_security_options().key_types.append('ssh-rsa')
+        ssh_client.get_security_options().key_types.append('ssh-dss')
         
         print(f"Connecting to {vendor} switch {ip}:{auth_port} as {auth_username}...")
         
-        # Establish SSH connection
+        # Establish SSH connection with compatibility for older switches
         ssh_client.connect(
             hostname=ip,
             username=auth_username,
@@ -486,7 +489,8 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
             banner_timeout=30,
             look_for_keys=False,
             allow_agent=False,
-            compress=False
+            compress=False,
+            disabled_algorithms={'pubkeys': ['rsa-sha2-512', 'rsa-sha2-256']} if vendor == 'HW' else {}
         )
         
         print(f"Successfully connected to {vendor} switch {ip}")

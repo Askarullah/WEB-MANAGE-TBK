@@ -1829,11 +1829,12 @@ def execute_switch_command():
         if not data:
             return jsonify({'success': False, 'error': 'No JSON data provided'}), 400
         
-        ip = data.get('ip', '').strip()
-        command = data.get('command', '').strip()
-        vendor = (data.get('vendor', 'DCN') or 'DCN').upper()
-        username = data.get('username', '').strip() or None
-        password = data.get('password', '').strip() or None
+        # Safely handle potential None values
+        ip = (data.get('ip') or '').strip()
+        command = (data.get('command') or '').strip()
+        vendor = (data.get('vendor') or 'DCN').upper()
+        username = (data.get('username') or '').strip() or None
+        password = (data.get('password') or '').strip() or None
         
         # Validate required fields
         if not ip:

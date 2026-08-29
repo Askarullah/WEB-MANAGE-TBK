@@ -488,15 +488,17 @@ def connect_to_switch(ip, command, vendor='DCN', username=None, password=None, p
             'compress': False
         }
         
-        # For switches (especially Huawei), allow all host key algorithms
-        # This includes: ssh-rsa, ecdsa-sha2-nistp256, ssh-ed25519, ssh-dss, etc.
+        # For Huawei switches, enable support for all their host key algorithms
+        # Supported algorithms: ecdsa-sha2-nistp256/384/521, ssh-ed25519, 
+        # x509v3-sign-rsa, x509v3-ssh-rsa, x509v3-sign-dss, x509v3-ssh-dss, ssh-rsa, ssh-dss
         if vendor == 'HW':
+            # Keep disabled_algorithms empty to allow all algorithms
             connect_kwargs['disabled_algorithms'] = {
-                'pubkeys': [],  # Allow all public key algorithms
-                'keys': [],     # Allow all key types
-                'kex': [],      # Allow all key exchange algorithms
-                'ciphers': [],  # Allow all ciphers
-                'macs': []      # Allow all MAC algorithms
+                'pubkeys': [],
+                'keys': [],
+                'kex': [],
+                'ciphers': [],
+                'macs': []
             }
         
         # Establish SSH connection
